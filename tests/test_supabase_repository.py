@@ -29,6 +29,7 @@ class Respostas:
 @pytest.mark.parametrize("env", [
     {"APOLO_ENV": "production"},
     {"RENDER": "true"},
+    {"RENDER": "true", "APOLO_ENV": "development"},
     {"APOLO_AUTH_MODE": "supabase", "SUPABASE_URL": "http://example.com", "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_test"},
     {"APOLO_AUTH_MODE": "supabase", "SUPABASE_URL": "https://example.com", "SUPABASE_PUBLISHABLE_KEY": "sb_secret_test"},
     {"APOLO_AUTH_MODE": "local", "APOLO_REPOSITORY_MODE": "supabase"},

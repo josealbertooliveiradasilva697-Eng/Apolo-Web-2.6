@@ -18,6 +18,8 @@ class Configuracao:
     def carregar(cls, env=None):
         env = os.environ if env is None else env
         ambiente = env.get("APOLO_ENV", "production" if env.get("RENDER") == "true" else "development")
+        if env.get("RENDER") == "true" and ambiente != "production":
+            raise ValueError("Render exige APOLO_ENV=production.")
         auth = env.get("APOLO_AUTH_MODE", "local")
         repo = env.get("APOLO_REPOSITORY_MODE", "supabase" if auth == "supabase" else "sqlite")
         if ambiente not in {"development", "production"}:

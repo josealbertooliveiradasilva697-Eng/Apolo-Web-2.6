@@ -80,3 +80,17 @@ Supabase, Auth, RLS, Render e validação online: pendentes.
 
 Confirmar testes padrão e commit; registrar o hash; integrar em develop e iniciar
 estabilização/contrato de persistência em features adequadas.
+
+## 03/10/2026 — Etapas 5 e 7: Auth e interface online
+
+Branch: feature/supabase-auth, criada de develop após bce8338.
+Criados: auth/supabase_provider.py, tests/test_supabase_auth.py,
+tests/test_interface_online.py. Alterados: app.py, auth/provider.py, config.py,
+iniciar.ps1, interface/telas.py e tests/test_supabase_repository.py.
+Motivo: validar identidade no Auth, renovar sessão, obter papel protegido,
+usar projetos privados e impedir autenticação fictícia em produção.
+Testes: login/refresh/logout, perfis negados, erros de rede, seis cálculos,
+histórico, criação de projeto e ausência de arquivo SQLite no modo online.
+Suíte diagnóstica: **671 passed, 11 skipped, 0 failed**. Os skips são três
+auditorias históricas e oito integrações que exigem PostgreSQL dedicado.
+Sem validação em conta Supabase/Render real até este momento.

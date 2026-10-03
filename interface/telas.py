@@ -49,9 +49,9 @@ def historico(servico):
     st.subheader("Histórico de execuções")
     linhas = servico.historico()
     if not linhas:
-        st.info("Nenhum cálculo registrado neste banco.")
+        st.info("Nenhum cálculo registrado nesta seleção.")
         return
-    st.caption("Últimas 200 execuções do banco selecionado.")
+    st.caption("Últimas 200 execuções da seleção atual.")
     st.dataframe(linhas,hide_index=True,width="stretch")
     id_exec = st.selectbox("Detalhar execução",[r["id_execucao"] for r in linhas])
     detalhes = servico.detalhe(id_exec)
@@ -105,11 +105,11 @@ def administracao(servico):
                 if chave.startswith("entrada:"):
                     del st.session_state[chave]
             st.success("Configuração salva.")
-    st.caption("Papéis preparados para integração futura com Supabase. Gestão de usuários será acrescentada com a autenticação.")
+    st.caption("Configurações válidas para o banco ou projeto selecionado.")
 
 
 def diagnosticos(servico):
-    st.subheader("Diagnóstico local")
+    st.subheader("Diagnóstico")
     if not permitido(servico.usuario, Acao.DIAGNOSTICAR):
         st.error("Seu perfil não permite esta operação.")
         return
