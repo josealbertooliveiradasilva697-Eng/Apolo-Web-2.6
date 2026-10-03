@@ -3,6 +3,12 @@
 Data: 03/10/2026. Código validado: f669ce255af3a2110f08597ab5e98afb5c922c5a.
 Registro sem senhas, tokens ou valores de chaves.
 
+Continuação posterior: veja VALIDACAO_E2E_OPERADOR.md. Login/logout, seis
+cálculos reais, snapshots, dois projetos do mesmo usuário e bloqueios SQL do
+operador aprovados. A auditoria encontrou apenas um perfil; a criação da segunda
+conta ainda precisa ser concluída. Nenhuma promoção de papel foi executada.
+Os itens pendentes abaixo descrevem o ponto anterior a esse ensaio.
+
 ## Suíte padrão e publicação confirmadas
 
 O usuário executou IMPORTAR_MARCO_02.ps1 no terminal normal:

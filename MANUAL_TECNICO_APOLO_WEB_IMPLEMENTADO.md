@@ -1,5 +1,12 @@
 # Manual técnico do Apolo Web implementado
 
+Validação real posterior: login OPERADOR, seis cálculos persistidos, 30 snapshots,
+separação de dois projetos, histórico, banco de variáveis, Breguet inválido,
+logout e login negativo aprovados. SQL no Supabase negou configuração/diagnóstico
+ao operador dentro de transação com rollback. Auditoria encontrou um perfil;
+segunda conta, papéis privilegiados, refresh/restart/redeploy ainda pendentes.
+Veja docs/VALIDACAO_E2E_OPERADOR.md. Não houve promoção de papel nesta etapa.
+
 Atualização posterior ao marco f669ce2: o usuário confirmou a suíte padrão
 (683 passed, 8 skipped com ativos; 680 passed, 11 skipped portátil).
 Actions 37156911993 foi conferido e passou com **688 passed, 3 skipped**,
@@ -10,12 +17,13 @@ Veja docs/VALIDACAO_ONLINE_MARCO_02.md e a consulta repetível em
 supabase/verificacoes/20261003_instalacao.sql. Os estados “pendentes” abaixo
 registram o momento anterior à publicação; CI/pytest/instalação SQL já foram
 confirmados. Render publicado no plano gratuito, deploy aprovado e tela de login
-conferida em https://apolo-web-z74k.onrender.com/. Login/isolamento real via API
-ainda precisam de validação com contas criadas pelo usuário.
+conferida em https://apolo-web-z74k.onrender.com/. Login/cálculos reais foram
+validados; isolamento entre usuários via API ainda exige segunda conta.
 
 Atualizado em 03/10/2026. Código preparado até PostgreSQL/Auth/RLS/UI/CI/Render.
 **A validação de produção ainda não está concluída:** CI e instalação SQL já
-passaram; faltam contas e o fluxo real autenticado ponta a ponta no Render.
+passaram; fluxo OPERADOR aprovado, mas faltam segunda conta, papéis privilegiados,
+refresh real e validação de persistência após restart/redeploy.
 
 Este manual explica o que mudou e por quê. Não confunde um teste com API simulada
 com um teste no serviço real. As fórmulas e o schema SQLite não foram alterados.
@@ -112,6 +120,8 @@ RLS responde “quais linhas desse banco pode acessar?”. São camadas compleme
         202610030003_security_rpc.sql
       supabase/verificacoes/20261003_instalacao.sql
       docs/VALIDACAO_ONLINE_MARCO_02.md
+      docs/VALIDACAO_E2E_OPERADOR.md
+      supabase/verificacoes/20261003_e2e.sql / 20261003_operador.sql
       tools/
         importar_banco.py / gerar_fixtures_legado.py / iniciar_online.py
         __init__.py
@@ -449,6 +459,9 @@ Referência: [PostgreSQL em Actions](https://docs.github.com/en/actions/tutorial
 | tests/test_render_deploy.py | Porta, produção, caminhos com espaços e template |
 | docs/VALIDACAO_ONLINE_MARCO_02.md | Evidências externas observadas e passagem para teste autenticado |
 | supabase/verificacoes/20261003_instalacao.sql | Auditoria repetível somente leitura da instalação, não migration |
+| docs/VALIDACAO_E2E_OPERADOR.md | Fluxo real UI/Auth/banco e distinção entre SQL e acesso HTTP |
+| supabase/verificacoes/20261003_e2e.sql | Compara seis snapshots reais às referências e separação dos projetos |
+| supabase/verificacoes/20261003_operador.sql | Verifica autorização com claims SQL controlados e rollback; não promove perfil |
 
 O gerador e as fixtures haviam sido criados pelo usuário antes do commit 663bd2c;
 “criado” nesta tabela significa novo em Git em relação à baseline.
@@ -519,9 +532,10 @@ posteriormente aprovada no terminal do usuário e na CI, conforme tabela acima.
 Validação de fumaça: Streamlit local respondeu ok em 8517; iniciador online com
 configuração de exemplo respondeu ok em 0.0.0.0:8518. Ambos foram encerrados.
 O navegador confirmou migrations/auditoria no Supabase e deploy/tela de login
-no Render. Não houve ainda login/cálculo numa conta Supabase real.
+no Render. Depois foram aprovados login/logout, seis cálculos persistidos,
+histórico, separação A/B, recusa Breguet e login negativo numa conta real.
 CI, PostgreSQL real isolado e testes padrão foram confirmados; autenticação
-real e isolamento via PostgREST ainda precisam de contas de teste.
+entre duas pessoas, papéis privilegiados e refresh real ainda precisam de validação.
 
 ## 23. Como rodar localmente
 
@@ -578,11 +592,11 @@ Confira startup e health; abra o app HTTPS e execute:
 
 | Verificação real | Resultado esperado | Estado neste pacote |
 | --- | --- | --- |
-| Login correto/incorreto e logout | Identidade real; recusa segura; estado limpo | Pendente |
+| Login correto/incorreto e logout | Identidade real; recusa segura; estado limpo | Aprovado no Render/Supabase |
 | Expiração/refresh e conta sem profile | Renovação ou novo login; falha fechada | Pendente |
 | Operador, admin e desenvolvedor | Matriz de papel na UI, serviço e banco | Pendente |
-| Criar/selecionar dois projetos | Defaults e históricos separados | Pendente |
-| Os seis cálculos e histórico | Referências e snapshots equivalentes | Mock aprovado; real pendente |
+| Criar/selecionar dois projetos | Defaults e históricos separados | Aprovado A/B do mesmo proprietário |
+| Os seis cálculos e histórico | Referências e snapshots equivalentes | Aprovado real: seis execuções, 30 valores |
 | Dois usuários tentam acesso cruzado | SELECT vazio e RPC negada | PostgreSQL CI aprovado; PostgREST real pendente |
 | Alterar papel/defaults direto pela API | Negado ao cliente | PostgreSQL CI aprovado; API real pendente |
 | Reiniciar serviço | Dados conservados; novo login se necessário | Pendente |

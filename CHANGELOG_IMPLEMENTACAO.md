@@ -1,5 +1,25 @@
 # Changelog da implementação Apolo Web
 
+## Validação real do operador — continuação da etapa 10
+
+Branch: feature/online-validation; código publicado permanece f669ce2.
+Login real OPERADOR confirmado; criados projetos A/B exclusivos de teste.
+As seis equações foram salvas pela UI Render, com referências independentes.
+Supabase confirmou seis execuções, 30 snapshots, 23 variáveis por projeto e
+as seis saídas equivalentes (1e-12). Breguet inválido não criou execução.
+Histórico/detalhes, separação A/B, banco de variáveis, logout e login inexistente
+foram conferidos no navegador. Teste SQL real com claims controlados negou
+configuração/diagnóstico ao operador (42501), com rollback e sem promoção de papel.
+Não afirmar isolamento HTTP entre usuários: a auditoria encontrou só um perfil.
+Pendente segunda conta e autorização para teste temporário ADMIN/DESENVOLVEDOR.
+Criados: docs/VALIDACAO_E2E_OPERADOR.md,
+supabase/verificacoes/20261003_e2e.sql, supabase/verificacoes/20261003_operador.sql.
+Alterados: manual/changelog e registro online anterior.
+Sem alterações estruturais/runtime; git diff --check e SQL executado no banco real.
+CI de referência: 688 passed, 3 skipped, 0 failed para f669ce2 (não rerodada agora).
+Commit: assunto “docs: registrar fluxo real de operador e persistencia online”;
+hash no relatório externo. Main/develop/Render e dados originais preservados.
+
 ## Confirmação posterior — suíte padrão, CI e instalação Supabase
 
 Branch de registro: feature/online-validation, criada de develop em f669ce2.
