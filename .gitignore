@@ -2,8 +2,11 @@
 __pycache__/
 .pytest_cache/
 .env
+.env.*
+!.env.example
 .streamlit/secrets.toml
-data/*.db*
+data/
+pytest-cache-files-*/
 originals/
 *.pyc
 .coverage

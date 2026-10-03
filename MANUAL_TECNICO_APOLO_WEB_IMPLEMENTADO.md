@@ -1,6 +1,19 @@
 # Manual técnico do Apolo Web — documento em evolução
 
-Atualizado em 03/10/2026. Marco: testes portáteis e preparação de CI.
+Atualizado em 03/10/2026. Marco: testes portáteis confirmados e estabilização local.
+
+Confirmação padrão no terminal do usuário: **640 passed** (11,15 s) e
+**637 passed, 3 skipped** na cópia portátil (11,56 s). Commit: **663bd2c**.
+Esse resultado substitui a pendência da execução padrão nas seções históricas.
+A CI remota permanece pendente.
+
+O desenvolvimento continua em um clone isolado criado por Git bundle, em
+`work/apolo-desenvolvimento`, com o mesmo histórico. O clone do OneDrive
+permanece no marco confirmado. Nenhuma ACL foi alterada.
+
+Na etapa 2, iniciar.ps1 deixou de procurar um Python relativo a uma sessão Codex.
+Ele usa a venv do projeto ou o Python do sistema. README foi reescrito como
+instrução reproduzível; .gitignore protege variações de .env e toda a pasta data.
 
 Este documento distingue o código verificado do trabalho planejado.
 A migração online ainda não está implementada; não há Supabase, RLS ou deploy

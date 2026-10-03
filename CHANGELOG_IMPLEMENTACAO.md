@@ -7,9 +7,20 @@ de .git. Nenhum merge, push ou deploy.
 
 Branch: feature/ci-portable-tests.
 Baseline: a4cd61af479430c471c2140d1d5867a511ed606b.
-Commit: **pendente**; mensagem proposta:
+Commit confirmado pelo usuário e pelo histórico local: **663bd2c**.
+Mensagem:
 `test: tornar referencias do legado portateis e preparar CI`.
-Registrar o hash real após o commit bem-sucedido.
+Suíte padrão confirmada pelo usuário: **640 passed** no clone e
+**637 passed, 3 skipped** na cópia portátil. CI remota ainda pendente.
+
+## 03/10/2026 — Etapa 2: estabilização local
+
+Branch: feature/local-stabilization, criada de develop após integrar 663bd2c.
+Arquivos: iniciar.ps1, .gitignore, README.md e documentação.
+Motivo: retirar caminhos de sessão Codex e instruções dependentes de bancos
+específicos; proteger arquivos .env alternativos e dados locais.
+Dependências mantidas em suas versões verificadas; nenhum dado real copiado.
+Testes/commit serão registrados após a verificação deste bloco.
 
 | Etapa | Arquivos | Motivo | Testes |
 | --- | --- | --- | --- |
