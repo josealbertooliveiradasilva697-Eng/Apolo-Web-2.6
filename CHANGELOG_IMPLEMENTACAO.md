@@ -1,8 +1,28 @@
 # Changelog da implementação Apolo Web
 
+## Confirmação posterior — suíte padrão, CI e instalação Supabase
+
+Branch de registro: feature/online-validation, criada de develop em f669ce2.
+Usuário confirmou pytest padrão: **683 passed, 8 skipped** no clone original;
+**680 passed, 11 skipped** portátil. feature/render-deploy foi publicada.
+CI 37156911993 aprovada: **688 passed, 3 skipped**, incluindo oito testes
+PostgreSQL reais. Migrations 001/002/003 aplicadas com autorização explícita
+no projeto Supabase dedicado. Auditoria: 23 variáveis, seis cálculos,
+30 dependências, oito tabelas com RLS, nove policies e grants restritos.
+Criados: docs/VALIDACAO_ONLINE_MARCO_02.md e
+supabase/verificacoes/20261003_instalacao.sql. Sem alteração de fórmulas.
+As pendências de CI/SQL/padrão nos registros abaixo descrevem o marco anterior;
+foram resolvidas pelas evidências acima. Render Free publicado: serviço
+srv-db0o97favr4c738kgleg, deploy dep-db0o97navr4c738kgne0 aprovado em 1 min 2 s;
+tela de login conferida em https://apolo-web-z74k.onrender.com/.
+Auto-deploy off; nenhuma assinatura paga, chave administrativa ou dado legado.
+Teste autenticado real aguarda duas contas criadas pelo usuário, sem senhas no chat.
+Commit de registro: consultar git log pelo assunto
+“docs: registrar CI verde e implantacao Supabase Render”; hash no relatório externo.
+
 Data: 03/10/2026. Baseline preservada: a4cd61a.
-Código preparado; implantação online e CI remota ainda pendentes.
-As mudanças após 663bd2c estão no clone isolado e bundle entregue, não no OneDrive.
+Código até f669ce2 importado no OneDrive e publicado pelo usuário.
+Documentação desta confirmação está na feature/online-validation do clone isolado.
 
 ## Commits e integração
 
@@ -16,7 +36,9 @@ As mudanças após 663bd2c estão no clone isolado e bundle entregue, não no On
 | 8/9: CI PostgreSQL/Render | feature/render-deploy | 2ba3979 | 680 passed, 11 skipped diagnóstico + health ok |
 
 Cada feature foi integrada por fast-forward ao develop isolado antes da seguinte.
-Main não foi alterada. Nenhum push, force push, PR ou deploy foi realizado.
+Main não foi alterada. O usuário publicou feature/render-deploy sem force;
+Supabase instalado com aprovação explícita e Render Free publicado depois da CI.
+Não foi aberto PR nem publicado develop remoto.
 A atualização final de documentação é commit separado na feature/render-deploy;
 seu hash está no relatório do pacote e em git log --oneline.
 
@@ -91,7 +113,8 @@ Correção: subprocess com lista de argumentos no Windows; execv no Linux.
 Novos testes protegem portas inválidas, configuração local, argumentos com espaços
 e campos mínimos do template. Não equivalem à validação do Blueprint no Render.
 Health local e startup online de exemplo responderam ok; processos encerrados.
-Commit 2ba3979. Render/CI ainda não executados remotamente.
+Commit 2ba3979. A confirmação posterior está no início deste documento:
+CI e deploy remotos passaram para f669ce2, sem alterar o código dessa etapa.
 
 ## Documentação final
 
@@ -110,14 +133,18 @@ Resultado diagnóstico final: **680 passed, 11 skipped, 0 failed**, 15,18 s.
 Três skips de ativos históricos ausentes; oito de PostgreSQL sem DSN.
 Runner externo substitui só tmp_path e não modifica ACL/testes/bibliotecas.
 Ainda há erro de cleanup de TemporaryDirectory ao sair do sandbox.
-Portanto pytest padrão do novo marco precisa ser confirmado fora deste ambiente.
+Essa limitação histórica foi superada por pytest padrão no terminal do usuário
+e GitHub Actions, sem alterar ACLs ou flexibilizar TLS.
 
-Validações realizadas: AppTest local/online e dois testes HTTP de saúde.
-Não realizadas: navegador manual, Auth/PostgREST reais, RLS em banco real,
-reinício/novo deploy com persistência Supabase e CI remota.
+Validações realizadas: AppTest local/online, dois testes HTTP locais, pytest padrão,
+CI PostgreSQL/RLS real, auditoria SQL Supabase, deploy e tela pública de login.
+Não realizadas: login/Auth/PostgREST reais com contas, reinício/novo deploy
+com histórico persistido. Proteções SQL instaladas não substituem esses testes.
 
 Git HTTPS: Schannel sem credenciais; alternativa OpenSSL com cadeia de
 certificados indisponível. Não desabilitamos TLS nem extraímos credenciais.
-Nenhuma alteração externa, secret, dado legado ou banco real foi versionado.
-Pendência imediata: importar pacote, rodar pytest padrão, publicar feature,
-confirmar CI SQL; depois configurar Supabase/Render e executar checklist do manual.
+Secrets, dados legados e arquivos de banco não foram versionados.
+Pendência imediata: usuário criar duas contas confirmadas e entrar no aplicativo;
+depois executar checklist autenticado do manual. Tradução automática do Edge
+causou erro no painel Users; solicitar desativação da tradução e atualização,
+sem contornar segurança ou repetir migrations.

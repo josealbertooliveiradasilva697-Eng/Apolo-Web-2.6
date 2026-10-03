@@ -1,8 +1,21 @@
 # Manual técnico do Apolo Web implementado
 
+Atualização posterior ao marco f669ce2: o usuário confirmou a suíte padrão
+(683 passed, 8 skipped com ativos; 680 passed, 11 skipped portátil).
+Actions 37156911993 foi conferido e passou com **688 passed, 3 skipped**,
+executando os oito testes PostgreSQL reais. Após autorização explícita,
+as três migrations foram instaladas no Supabase dedicado e a auditoria
+confirmou 23 variáveis, seis cálculos, oito tabelas com RLS e nove políticas.
+Veja docs/VALIDACAO_ONLINE_MARCO_02.md e a consulta repetível em
+supabase/verificacoes/20261003_instalacao.sql. Os estados “pendentes” abaixo
+registram o momento anterior à publicação; CI/pytest/instalação SQL já foram
+confirmados. Render publicado no plano gratuito, deploy aprovado e tela de login
+conferida em https://apolo-web-z74k.onrender.com/. Login/isolamento real via API
+ainda precisam de validação com contas criadas pelo usuário.
+
 Atualizado em 03/10/2026. Código preparado até PostgreSQL/Auth/RLS/UI/CI/Render.
-**A migração não está concluída em produção:** faltam CI remota, aplicação das
-migrations no Supabase e validação ponta a ponta no Render.
+**A validação de produção ainda não está concluída:** CI e instalação SQL já
+passaram; faltam contas e o fluxo real autenticado ponta a ponta no Render.
 
 Este manual explica o que mudou e por quê. Não confunde um teste com API simulada
 com um teste no serviço real. As fórmulas e o schema SQLite não foram alterados.
@@ -22,7 +35,8 @@ A fonte auditada tem SHA-256
 b06d2d4e064fdafd8c2edae0130435175022da7c62dc2221ee881edb1ae949e7.
 As fixtures contêm 600 casos e cinco inválidos; o snapshot SQLite tem 11 objetos.
 
-O clone do OneDrive continua em 663bd2c. Este ambiente não conseguiu escrever
+O clone do OneDrive foi atualizado pelo usuário até f669ce2, com develop local
+integrado e feature/render-deploy publicada. Este ambiente não conseguiu escrever
 seu índice Git. O desenvolvimento foi realizado em clone isolado em
 work/apolo-desenvolvimento, criado por bundle, com o histórico preservado.
 Não foram alteradas ACLs nem copiados originals, data ou credenciais.
@@ -96,6 +110,8 @@ RLS responde “quais linhas desse banco pode acessar?”. São camadas compleme
         202610030001_schema.sql
         202610030002_catalog.sql
         202610030003_security_rpc.sql
+      supabase/verificacoes/20261003_instalacao.sql
+      docs/VALIDACAO_ONLINE_MARCO_02.md
       tools/
         importar_banco.py / gerar_fixtures_legado.py / iniciar_online.py
         __init__.py
@@ -366,6 +382,12 @@ render.yaml prepara Web Service Python, plano free, branch feature/render-deploy
 auto-deploy off, sem disco/banco Render. Plano pago não foi contratado.
 O nome apolo-web é um template: revise se já houver serviço com esse nome.
 
+Instalação real conferida: serviço apolo-web (srv-db0o97favr4c738kgleg), Ohio,
+Free; endereço https://apolo-web-z74k.onrender.com/. O formulário foi preenchido
+diretamente no painel com os mesmos comandos/variáveis do template, não por
+importação automática do Blueprint. Deploy f669ce2 aprovado em 1 min 2 s;
+auto-deploy off, sem serviço de banco/disco Render. A tela de login foi aberta.
+
 Build: python -m pip install -r requirements.txt
 Start: python -m tools.iniciar_online
 Health: /_stcore/health
@@ -394,12 +416,11 @@ auth.users/auth.uid são stubs de preparação; PostgreSQL, RLS e transações s
 Isso não testa o servidor Supabase Auth ou o gateway PostgREST real.
 
 O job tem apenas contents: read. PostgreSQL deve estar saudável antes dos testes.
-CI remota ainda não executou: o Git HTTPS falhou por credenciais/certificados
-do ambiente. A alternativa OpenSSL também falhou verificação de cadeia;
-verificação TLS permaneceu habilitada.
-
-Com o mesmo código e tudo disponível, espera-se 688 passed, 3 skipped na CI;
-**é uma expectativa, não um resultado observado**. Os três skips são históricos.
+O usuário publicou pelo terminal normal; a CI remota 37156911993 foi conferida
+no navegador: **688 passed, 3 skipped, 0 failed em 6,22 s** para f669ce2.
+Os oito testes PostgreSQL foram executados. Os três skips são históricos.
+O Git HTTPS do sandbox continua limitado por credenciais/certificados;
+verificação TLS permaneceu habilitada. Isso não impediu o push pelo usuário.
 Referência: [PostgreSQL em Actions](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers).
 
 ## 19. Todos os arquivos criados, relativos à baseline
@@ -426,6 +447,8 @@ Referência: [PostgreSQL em Actions](https://docs.github.com/en/actions/tutorial
 | tests/test_interface_online.py | Interface online/seis cálculos sem criar SQLite |
 | tests/test_postgres_integracao.py | SQL/RLS/transações reais em banco descartável |
 | tests/test_render_deploy.py | Porta, produção, caminhos com espaços e template |
+| docs/VALIDACAO_ONLINE_MARCO_02.md | Evidências externas observadas e passagem para teste autenticado |
+| supabase/verificacoes/20261003_instalacao.sql | Auditoria repetível somente leitura da instalação, não migration |
 
 O gerador e as fixtures haviam sido criados pelo usuário antes do commit 663bd2c;
 “criado” nesta tabela significa novo em Git em relação à baseline.
@@ -481,18 +504,24 @@ não apaga tabelas para se acomodar a um banco existente.
 | bce8338, database/RLS | 652 | 11 | 0 | Runner diagnóstico; SQL real pulado |
 | c00bdad, Auth/UI | 671 | 11 | 0 | Runner diagnóstico + AppTest |
 | 2ba3979, CI/Render | 680 | 11 | 0 | Runner diagnóstico, 15,18 s |
+| f669ce2, terminal usuário com ativos | 683 | 8 | 0 | pytest padrão, 16,70 s |
+| f669ce2, cópia portátil usuário | 680 | 11 | 0 | pytest padrão, 22,11 s |
+| f669ce2, GitHub Actions PostgreSQL 16 | 688 | 3 | 0 | CI real, 6,22 s |
 
 O sandbox não consegue usar certos temporários criados pelo pytest/Python:
 a tentativa padrão anterior produziu erros de setup. O runner auxiliar, fora
 do repo, substitui apenas tmp_path por diretórios únicos com permissões herdadas
 e desativa tmpdir/cache. Não alterou ACLs, testes ou bibliotecas.
 Há ainda PermissionError na limpeza de TemporaryDirectory ao encerrar o processo.
-Isso NÃO conta como execução padrão integral aprovada para o novo marco.
+O runner diagnóstico não conta como execução padrão. A execução padrão foi
+posteriormente aprovada no terminal do usuário e na CI, conforme tabela acima.
 
 Validação de fumaça: Streamlit local respondeu ok em 8517; iniciador online com
 configuração de exemplo respondeu ok em 0.0.0.0:8518. Ambos foram encerrados.
-Não houve login/cálculo numa conta Supabase nem validação manual por navegador.
-CI, PostgreSQL real e testes padrão do novo código precisam de confirmação.
+O navegador confirmou migrations/auditoria no Supabase e deploy/tela de login
+no Render. Não houve ainda login/cálculo numa conta Supabase real.
+CI, PostgreSQL real isolado e testes padrão foram confirmados; autenticação
+real e isolamento via PostgREST ainda precisam de contas de teste.
 
 ## 23. Como rodar localmente
 
@@ -554,11 +583,12 @@ Confira startup e health; abra o app HTTPS e execute:
 | Operador, admin e desenvolvedor | Matriz de papel na UI, serviço e banco | Pendente |
 | Criar/selecionar dois projetos | Defaults e históricos separados | Pendente |
 | Os seis cálculos e histórico | Referências e snapshots equivalentes | Mock aprovado; real pendente |
-| Dois usuários tentam acesso cruzado | SELECT vazio e RPC negada | SQL escrito; real pendente |
-| Alterar papel/defaults direto pela API | Negado ao cliente | SQL escrito; real pendente |
+| Dois usuários tentam acesso cruzado | SELECT vazio e RPC negada | PostgreSQL CI aprovado; PostgREST real pendente |
+| Alterar papel/defaults direto pela API | Negado ao cliente | PostgreSQL CI aprovado; API real pendente |
 | Reiniciar serviço | Dados conservados; novo login se necessário | Pendente |
 | Novo deploy | Mesmo histórico no Supabase, sem SQLite Render | Pendente |
-| CI com 600 snapshots | Persistência exata em PostgreSQL | Pendente |
+| CI com 600 snapshots | Persistência exata em PostgreSQL | Aprovado: 688 passed, 3 skipped |
+| Instalação/health/tela de login | Produção sem SQLite; serviço disponível | Aprovado no Render |
 
 Registre data, commit, evidência e resultado de cada item, sem tokens/senhas.
 Só então integre a versão validada em develop remoto e, após aprovação, main.
