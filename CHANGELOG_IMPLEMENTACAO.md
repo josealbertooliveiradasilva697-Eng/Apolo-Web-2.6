@@ -94,3 +94,19 @@ histórico, criação de projeto e ausência de arquivo SQLite no modo online.
 Suíte diagnóstica: **671 passed, 11 skipped, 0 failed**. Os skips são três
 auditorias históricas e oito integrações que exigem PostgreSQL dedicado.
 Sem validação em conta Supabase/Render real até este momento.
+
+## 03/10/2026 — Etapas 8 e 9: PostgreSQL na CI e preparo Render
+
+Branch: feature/render-deploy, a partir de develop após c00bdad.
+Criados: render.yaml, tools/iniciar_online.py e tests/test_render_deploy.py.
+Alterados: .github/workflows/tests.yml e .env.example.
+Motivo: CI com PostgreSQL 16 descartável e testes reais de grants/RLS/transações;
+servidor com bind 0.0.0.0, PORT validada, sem persistência local e sem provider fake.
+Teste de fumaça: servidor local e iniciador de produção responderam
+**ok** em /_stcore/health; processos de teste encerrados.
+O primeiro teste do iniciador detectou problema de quoting do execv no Windows;
+corrigido usando subprocess com lista de argumentos apenas nessa plataforma.
+Suíte diagnóstica final desta etapa: **680 passed, 11 skipped, 0 failed**.
+As 600 referências matemáticas continuam intactas.
+CI/deploy reais não executados: HTTPS Git bloqueado por credenciais Schannel
+e cadeia de certificados indisponível na alternativa OpenSSL. TLS não foi desabilitado.

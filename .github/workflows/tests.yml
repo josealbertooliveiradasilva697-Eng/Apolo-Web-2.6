@@ -15,8 +15,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      APOLO_ENV: development
       APOLO_AUTH_MODE: local
+      APOLO_REPOSITORY_MODE: sqlite
       APOLO_LOCAL_ROLE: operador
+      # Credencial exclusiva do container descartável; não é um secret de produção.
+      APOLO_TEST_POSTGRES_DSN: postgresql://postgres:apolo_test@localhost:5432/apolo_test
+      APOLO_TEST_POSTGRES_ISOLATED: '1'
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: apolo_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: apolo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
@@ -35,5 +54,5 @@ jobs:
           assert not Path("originals").exists(), "originals nao deve ser versionado"
           assert not list(Path("data").glob("*.db*")), "bancos reais nao devem ser versionados"
           PY
-      - name: Executar suite portatil
+      - name: Executar suite portatil e RLS em PostgreSQL real
         run: python -m pytest tests -q
