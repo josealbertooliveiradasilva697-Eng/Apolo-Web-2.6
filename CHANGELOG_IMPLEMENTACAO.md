@@ -1,112 +1,123 @@
 # Changelog da implementação Apolo Web
 
-## 03/10/2026 — Marco 1: portabilidade e preparação de CI
+Data: 03/10/2026. Baseline preservada: a4cd61a.
+Código preparado; implantação online e CI remota ainda pendentes.
+As mudanças após 663bd2c estão no clone isolado e bundle entregue, não no OneDrive.
 
-Status: arquivos e testes diagnósticos preparados; commit bloqueado por permissão
-de .git. Nenhum merge, push ou deploy.
+## Commits e integração
 
-Branch: feature/ci-portable-tests.
-Baseline: a4cd61af479430c471c2140d1d5867a511ed606b.
-Commit confirmado pelo usuário e pelo histórico local: **663bd2c**.
-Mensagem:
-`test: tornar referencias do legado portateis e preparar CI`.
-Suíte padrão confirmada pelo usuário: **640 passed** no clone e
-**637 passed, 3 skipped** na cópia portátil. CI remota ainda pendente.
+| Etapa | Branch a partir de develop | Commit | Resultado |
+| --- | --- | --- | --- |
+| 1: testes portáteis/CI inicial | feature/ci-portable-tests | 663bd2c | 640 passed padrão com ativos; 637 passed, 3 skipped portátil, confirmados pelo usuário |
+| 2: estabilização local | feature/local-stabilization | 49f602f | 637 passed, 3 skipped diagnóstico |
+| 3: contrato de persistência | feature/supabase-database | 40d863c | 639 passed, 3 skipped diagnóstico |
+| 4/6: PostgreSQL/Supabase/RLS | feature/supabase-database | bce8338 | 652 passed, 11 skipped diagnóstico; SQL real ainda pulado |
+| 5/7: Auth e UI online | feature/supabase-auth | c00bdad | 671 passed, 11 skipped diagnóstico |
+| 8/9: CI PostgreSQL/Render | feature/render-deploy | 2ba3979 | 680 passed, 11 skipped diagnóstico + health ok |
 
-## 03/10/2026 — Etapa 2: estabilização local
+Cada feature foi integrada por fast-forward ao develop isolado antes da seguinte.
+Main não foi alterada. Nenhum push, force push, PR ou deploy foi realizado.
+A atualização final de documentação é commit separado na feature/render-deploy;
+seu hash está no relatório do pacote e em git log --oneline.
 
-Branch: feature/local-stabilization, criada de develop após integrar 663bd2c.
+## Etapa 1 — Portabilidade
+
+Arquivos: tests/test_equivalencia.py, tests/test_banco_e_papeis.py,
+tests/test_bancos_reais.py, tests/fixtures/equivalencia_apolo_26.json,
+tests/fixtures/schema_apolo_26.json, tools/gerar_fixtures_legado.py,
+.github/workflows/tests.yml, README.md e os dois documentos obrigatórios.
+Motivo: CI não recebe originals/data; JSON auditado conserva cobertura.
+Testes: 600 equivalências, seis números independentes, cinco Breguet inválidos,
+NaN/inf/overflow, 11 objetos de schema, seeds/cardinalidade/SHA e auditorias opcionais.
+Commit 663bd2c, produzido pelo usuário com roteiro do marco anterior.
+Não houve redução da cobertura de equivalência.
+
+## Etapa 2 — Limpeza
+
 Arquivos: iniciar.ps1, .gitignore, README.md e documentação.
-Motivo: retirar caminhos de sessão Codex e instruções dependentes de bancos
-específicos; proteger arquivos .env alternativos e dados locais.
-Dependências mantidas em suas versões verificadas; nenhum dado real copiado.
-Verificação diagnóstica da suíte: **637 passed, 3 skipped**.
-Commit correspondente: **49f602f**.
+Motivo: remover referência à venv de sessão Codex, proteger toda data e variantes
+.env e descrever instalação reproduzível. Runtime permaneceu igual.
+Testes: suíte local portátil e interface existentes. Commit 49f602f.
 
-## 03/10/2026 — Etapa 3: contrato de persistência
+## Etapa 3 — Persistência desacoplada
 
-Branch: feature/supabase-database, a partir de develop.
 Arquivos: database/contracts.py, database/repository.py, services/apolo.py,
 interface/telas.py e tests/test_contrato_persistencia.py.
-Contrato inclui somente operações usadas e uma identidade de contexto.
-SQLite mantém schema e transações. Diagnósticos passaram pelo serviço autorizado.
-Dois testes verificam execução sem arquivo e autorização fora da tela.
-Suíte diagnóstica: **639 passed, 3 skipped**. Commit: **40d863c**.
+Motivo: serviço usa contrato real pequeno; tela usa contexto, não arquivo;
+diagnóstico passa pela autorização do serviço.
+Testes novos: repository em memória sem path e acesso negado fora da interface.
+Commit 40d863c. Schema SQLite, catálogo e fórmulas inalterados.
 
-## 03/10/2026 — Etapas 4 e 6: persistência Supabase e RLS
+## Etapas 4 e 6 — Schema, API e segurança
 
-Branch: feature/supabase-database.
-Criados: config.py, integrations/supabase_http.py, database/supabase_repository.py,
-services/projects.py, três migrations SQL, tests/test_supabase_repository.py
-e tests/test_postgres_integracao.py.
-Alterados: .env.example e requirements-dev.txt (psycopg só para testes reais).
-Motivo: persistência com JWT individual, projetos privados e RPC atômico;
-cadastros sempre operadores; nenhuma escrita direta em perfis/valores/histórico.
-Teste de contrato REST: suíte diagnóstica **652 passed, 3 skipped**, antes de
-acrescentar os oito testes PostgreSQL opcionais.
-PostgreSQL/Auth real ainda não configurados. SQL/RLS precisam de execução real.
+Criados: config.py, integrations/__init__.py, integrations/supabase_http.py,
+database/supabase_repository.py, services/projects.py,
+tests/test_supabase_repository.py, tests/test_postgres_integracao.py e:
+- supabase/migrations/202610030001_schema.sql;
+- supabase/migrations/202610030002_catalog.sql;
+- supabase/migrations/202610030003_security_rpc.sql.
 
-| Etapa | Arquivos | Motivo | Testes |
-| --- | --- | --- | --- |
-| 1 | tests/test_equivalencia.py | Referências JSON; cardinalidade/seeds/SHA; auditoria local. | 600 comparações, seis referências, cinco inválidos, NaN/inf/overflow, AST/SHA. |
-| 1 | tests/test_banco_e_papeis.py | Schema auditado sem originals obrigatório. | 11 objetos/SHA e testes de banco/papéis preservados. |
-| 1 | tests/test_bancos_reais.py | Skip individual por banco ausente. | Dois testes locais; ambos pulados na cópia portátil. |
-| 1 | tests/fixtures/*.json; tools/gerar_fixtures_legado.py | Preparar arquivos recebidos não versionados para commit. | 600 casos, cinco inválidos, 11 objetos, SHA conferidos. |
-| 8, preparação antecipada | .github/workflows/tests.yml | CI em Python 3.12 sem dados privados. | Arquivo preparado; execução remota pendente. |
-| Documentação | README.md; manual; changelog | Explicar decisões/evidências/limitações. | Conferidos contra o estado real. |
+Alterados: .env.example, requirements-dev.txt e documentação.
+Motivo: oito tabelas com dono/projeto; catálogo estável; JWT individual;
+RLS/grants; perfil operador por default; RPC atômica de histórico/valores.
+Auth fake não é aceito em produção. Secret/service_role rejeitadas.
+psycopg[binary]==3.3.6 é driver de testes, não dependência de produção.
+Testes REST/config: operação única de salvar, contexto, catálogo completo,
+credenciais inadequadas, sessão/rede/HTTP seguros. Oito testes SQL opcionais
+incluem roles, cross-user, self-promotion negada, rollback e 600 snapshots.
+Commit bce8338. Migrations foram escritas, não aplicadas em Supabase real.
 
-Resultados após os ajustes:
+## Etapas 5 e 7 — Sessão e interface online
 
-- Clone real, runner diagnóstico: **640 passed, 0 skipped, 0 failed**.
-- Cópia sem originals/data, runner diagnóstico: **637 passed, 3 skipped, 0 failed**.
-- pytest padrão inicial no sandbox: **620 passed, 20 errors** de setup por
-  permissões de temporários; não conta como aprovação completa.
-- pytest padrão fora do sandbox e GitHub Actions: pendentes.
-- Interface validada por AppTest; nenhum teste manual no navegador neste marco.
-
-Runner auxiliar fora do repo substitui somente tmp_path por diretórios com ACL
-herdada; não modifica ACL, testes ou bibliotecas. Há erro de limpeza de
-TemporaryDirectory na saída do processo do sandbox.
-
-Permissão de escrita no repo/.git foi concedida, mas Git continuou sem criar
-index.lock. Clones independentes também falharam por restrição de sh/signal pipe.
-Roteiro manual de validação/commit foi entregue. Fórmulas, catálogo, schema,
-main/develop, originals/data permanecem preservados.
-
-Migrations: nenhuma. Dependências alteradas: nenhuma.
-Supabase, Auth, RLS, Render e validação online: pendentes.
-
-## Próximo marco
-
-Confirmar testes padrão e commit; registrar o hash; integrar em develop e iniciar
-estabilização/contrato de persistência em features adequadas.
-
-## 03/10/2026 — Etapas 5 e 7: Auth e interface online
-
-Branch: feature/supabase-auth, criada de develop após bce8338.
 Criados: auth/supabase_provider.py, tests/test_supabase_auth.py,
-tests/test_interface_online.py. Alterados: app.py, auth/provider.py, config.py,
-iniciar.ps1, interface/telas.py e tests/test_supabase_repository.py.
-Motivo: validar identidade no Auth, renovar sessão, obter papel protegido,
-usar projetos privados e impedir autenticação fictícia em produção.
-Testes: login/refresh/logout, perfis negados, erros de rede, seis cálculos,
-histórico, criação de projeto e ausência de arquivo SQLite no modo online.
-Suíte diagnóstica: **671 passed, 11 skipped, 0 failed**. Os skips são três
-auditorias históricas e oito integrações que exigem PostgreSQL dedicado.
-Sem validação em conta Supabase/Render real até este momento.
+tests/test_interface_online.py.
+Alterados: app.py, auth/provider.py, config.py, iniciar.ps1,
+interface/telas.py, tests/test_supabase_repository.py e changelog.
+Motivo: login, refresh/logout, identidade confirmada por /auth/v1/user,
+profile protegido, projetos privados e remoção de SQLite no caminho online.
+Testes: perfil faltante/errado, metadata não autoriza, refresh revogado,
+falha de rede distinta de credencial inválida, logout/limpeza,
+seis formulários numéricos, histórico e criação de projeto com API controlada.
+Commit c00bdad. Não houve cadastro público, cookie persistente ou gestão global.
 
-## 03/10/2026 — Etapas 8 e 9: PostgreSQL na CI e preparo Render
+## Etapas 8 e 9 — CI e Render
 
-Branch: feature/render-deploy, a partir de develop após c00bdad.
-Criados: render.yaml, tools/iniciar_online.py e tests/test_render_deploy.py.
-Alterados: .github/workflows/tests.yml e .env.example.
-Motivo: CI com PostgreSQL 16 descartável e testes reais de grants/RLS/transações;
-servidor com bind 0.0.0.0, PORT validada, sem persistência local e sem provider fake.
-Teste de fumaça: servidor local e iniciador de produção responderam
-**ok** em /_stcore/health; processos de teste encerrados.
-O primeiro teste do iniciador detectou problema de quoting do execv no Windows;
-corrigido usando subprocess com lista de argumentos apenas nessa plataforma.
-Suíte diagnóstica final desta etapa: **680 passed, 11 skipped, 0 failed**.
-As 600 referências matemáticas continuam intactas.
-CI/deploy reais não executados: HTTPS Git bloqueado por credenciais Schannel
-e cadeia de certificados indisponível na alternativa OpenSSL. TLS não foi desabilitado.
+Criados: render.yaml, tools/iniciar_online.py, tests/test_render_deploy.py.
+Alterados: .github/workflows/tests.yml, .env.example e changelog.
+Motivo: CI com PostgreSQL 16 dedicado, porta Render validada, 0.0.0.0,
+startup exige produção/Supabase, sem disco local ou contratação paga.
+Teste de fumaça detectou quoting de execv no Windows com espaços no caminho.
+Correção: subprocess com lista de argumentos no Windows; execv no Linux.
+Novos testes protegem portas inválidas, configuração local, argumentos com espaços
+e campos mínimos do template. Não equivalem à validação do Blueprint no Render.
+Health local e startup online de exemplo responderam ok; processos encerrados.
+Commit 2ba3979. Render/CI ainda não executados remotamente.
+
+## Documentação final
+
+Manual reescrito com 31 seções: antes/depois, fluxos, oito tabelas, policies/RPCs,
+arquivos, testes, variáveis, modos, deploy, diagnóstico, limitações e Apolo 3.
+README atualizado com ambos os modos e resultados observados.
+auth/provider.py: mensagem do helper local aponta para ProvedorSupabase,
+em vez de afirmar incorretamente que Auth ainda não está implementado.
+Este changelog substitui os estados “planejados” dos marcos anteriores.
+Fora do repo: relatório, bundle, ZIP de código e script seguro de importação/publicação.
+Não são dependências de runtime.
+
+## Evidências e limites
+
+Resultado diagnóstico final: **680 passed, 11 skipped, 0 failed**, 15,18 s.
+Três skips de ativos históricos ausentes; oito de PostgreSQL sem DSN.
+Runner externo substitui só tmp_path e não modifica ACL/testes/bibliotecas.
+Ainda há erro de cleanup de TemporaryDirectory ao sair do sandbox.
+Portanto pytest padrão do novo marco precisa ser confirmado fora deste ambiente.
+
+Validações realizadas: AppTest local/online e dois testes HTTP de saúde.
+Não realizadas: navegador manual, Auth/PostgREST reais, RLS em banco real,
+reinício/novo deploy com persistência Supabase e CI remota.
+
+Git HTTPS: Schannel sem credenciais; alternativa OpenSSL com cadeia de
+certificados indisponível. Não desabilitamos TLS nem extraímos credenciais.
+Nenhuma alteração externa, secret, dado legado ou banco real foi versionado.
+Pendência imediata: importar pacote, rodar pytest padrão, publicar feature,
+confirmar CI SQL; depois configurar Supabase/Render e executar checklist do manual.

@@ -1,338 +1,659 @@
-# Manual técnico do Apolo Web — documento em evolução
+# Manual técnico do Apolo Web implementado
 
-Atualizado em 03/10/2026. Marco: testes portáteis confirmados e estabilização local.
+Atualizado em 03/10/2026. Código preparado até PostgreSQL/Auth/RLS/UI/CI/Render.
+**A migração não está concluída em produção:** faltam CI remota, aplicação das
+migrations no Supabase e validação ponta a ponta no Render.
 
-Confirmação padrão no terminal do usuário: **640 passed** (11,15 s) e
-**637 passed, 3 skipped** na cópia portátil (11,56 s). Commit: **663bd2c**.
-Esse resultado substitui a pendência da execução padrão nas seções históricas.
-A CI remota permanece pendente.
+Este manual explica o que mudou e por quê. Não confunde um teste com API simulada
+com um teste no serviço real. As fórmulas e o schema SQLite não foram alterados.
 
-O desenvolvimento continua em um clone isolado criado por Git bundle, em
-`work/apolo-desenvolvimento`, com o mesmo histórico. O clone do OneDrive
-permanece no marco confirmado. Nenhuma ACL foi alterada.
+## 1. Estado inicial recebido e pontos de retorno
 
-Na etapa 2, iniciar.ps1 deixou de procurar um Python relativo a uma sessão Codex.
-Ele usa a venv do projeto ou o Python do sistema. README foi reescrito como
-instrução reproduzível; .gitignore protege variações de .env e toda a pasta data.
+Baseline: a4cd61a, “Baseline inicial do Apolo Web”. O usuário confirmou o marco
+663bd2c com pytest padrão: 640 passed no clone e 637 passed, 3 skipped sem os
+ativos históricos. A portabilidade preservou as 600 comparações exatas,
+seis resultados independentes, cinco inválidos de Breguet e NaN/inf/overflow.
 
-Este documento distingue o código verificado do trabalho planejado.
-A migração online ainda não está implementada; não há Supabase, RLS ou deploy
-concluídos neste marco. A arquitetura final será documentada quando existir.
+O projeto já separava interface, serviços, matemática, identidade e SQLite.
+Havia seis cálculos, 23 variáveis, três papéis, histórico com snapshots e importação
+local que cria cópia. O login ainda era fictício e não havia isolamento multiusuário.
 
-## 1. Estado inicial recebido
+A fonte auditada tem SHA-256
+b06d2d4e064fdafd8c2edae0130435175022da7c62dc2221ee881edb1ae949e7.
+As fixtures contêm 600 casos e cinco inválidos; o snapshot SQLite tem 11 objetos.
 
-Clone: `C:\Users\User\OneDrive\Documentos\Work\Projeto Apolo\Apolo_Web_Local\apolo_web`.
-Baseline: `a4cd61af479430c471c2140d1d5867a511ed606b`.
-Branch: `feature/ci-portable-tests`; main/develop permanecem na baseline.
-Remoto configurado: repositório privado Apolo-Web-2.6. Nenhum push neste marco.
+O clone do OneDrive continua em 663bd2c. Este ambiente não conseguiu escrever
+seu índice Git. O desenvolvimento foi realizado em clone isolado em
+work/apolo-desenvolvimento, criado por bundle, com o histórico preservado.
+Não foram alteradas ACLs nem copiados originals, data ou credenciais.
 
-Já existiam seis fórmulas, 23 variáveis, Streamlit, serviços com autorização,
-SQLite e importação para cópia. Foram recebidos como alterações pendentes:
-test_equivalencia.py, duas fixtures e tools/gerar_fixtures_legado.py.
-Essas alterações preexistentes foram preservadas.
+Main permanece na baseline. Develop foi atualizado por fast-forward no clone
+isolado, e cada etapa começou numa feature a partir dessa integração.
+O bundle entregue permite transportar os commits sem refazer mudanças à mão.
 
-Fonte auditada: Apolo_2_6_exportado.py, SHA-256
-`b06d2d4e064fdafd8c2edae0130435175022da7c62dc2221ee881edb1ae949e7`.
-São 600 casos numéricos, cinco inválidos de Breguet e 11 objetos de schema.
+## 2. Arquitetura implementada
 
-## 2. Arquitetura atual e final pretendida
+Core é matemática pura. Services coordena os casos de uso e exige permissões.
+Repositories traduzem operações para SQLite ou API Supabase. Auth confirma a
+identidade. Streamlit apresenta formulários e mensagens, sem calcular fórmulas.
 
-Hoje core calcula, services coordena operações/permissões, database persiste,
-auth fornece a identidade e interface apresenta os dados. A troca de interface
-não exige alterar uma fórmula. A versão final acrescentará Auth real,
-projetos e repository Supabase com RLS. Essas partes ainda não existem.
+PostgreSQL é o banco do Supabase. O app conversa com sua API HTTPS PostgREST;
+não recebe senha de PostgreSQL nem usa conexão administrativa em produção.
+O cliente HTTP pequeno usa biblioteca padrão Python, com timeout, sem redirects
+e erros genéricos. Isso evitou introduzir um SDK completo para poucas operações.
+A contrapartida é manter e testar esse pequeno adaptador explicitamente.
 
-## 3. Diagrama antes/depois
+O Render executa o processo Streamlit. Não é responsável pelo banco. Seus
+arquivos temporários podem desaparecer sem apagar o histórico persistido no Supabase.
 
-```text
-Atual:
-Navegador -> app.py/Streamlit -> interface -> ServicoApolo
-                                            |-> exigir/permissões
-                                            |-> core/calculos
-                                            |-> RepositorioSQLite
-ProvedorLocal -----------------------------> identidade de teste
+## 3. Diagrama textual antes/depois
 
-Destino planejado:
-Navegador -> Streamlit no Render -> services -> contrato de repository
-                                    |-> core matemático
-                                    |-> autorização na aplicação
-                                    |-> Supabase Auth/perfil protegido
-                                    |-> Supabase API + JWT individual
-                                        -> PostgreSQL + RLS
-```
+    Antes:
+    navegador -> Streamlit -> serviço -> core
+                                  |
+                                  +-> SQLite em arquivo
+    provider local -> papel fixo de teste
 
-## 4. Árvore neste marco
+    Depois, modo online:
+    navegador -> Streamlit no Render -> serviços -> core intacto
+                     |                    |
+                     | Auth/session       +-> contrato de repository
+                     v                           |
+                 Supabase Auth                   v
+                 perfil protegido          API HTTPS + JWT individual
+                                                 |
+                                                 v
+                                            PostgreSQL
+                                          grants + RLS + RPC
 
-```text
-apolo_web/
-  .github/workflows/tests.yml       preparado; CI remota pendente
-  .streamlit/config.toml            configuração local
-  .env.example / .gitignore
-  app.py / iniciar.ps1
-  core/calculos.py / catalogo.py
-  services/apolo.py
-  database/repository.py / schema.sql
-  auth/provider.py / roles.py
-  interface/telas.py
-  tools/importar_banco.py / gerar_fixtures_legado.py
-  tests/conftest.py
-  tests/test_equivalencia.py
-  tests/test_banco_e_papeis.py
-  tests/test_bancos_reais.py
-  tests/test_interface.py
-  tests/fixtures/equivalencia_apolo_26.json
-  tests/fixtures/schema_apolo_26.json
-  requirements.txt / requirements-dev.txt
-  README.md / AUDITORIA.md / auditoria.json
-  MANUAL_TECNICO_APOLO_WEB_IMPLEMENTADO.md
-  CHANGELOG_IMPLEMENTACAO.md
-  originals/ / data/ / .venv/        locais, ignorados
-```
+    Modo dev:
+    mesmo Streamlit/serviço/core -> RepositorioSQLite -> cópia local
 
-Árvore resumida atual; não representa uma migração online concluída.
+Autenticação responde “quem é?”. Autorização responde “o que pode fazer?”.
+RLS responde “quais linhas desse banco pode acessar?”. São camadas complementares.
 
-## 5. Fluxo completo de um cálculo
+## 4. Árvore final deste pacote
 
-app.py identifica o papel e abre uma cópia SQLite. A tela consulta variáveis
-pelo serviço e envia as entradas a executar(). O serviço exige CALCULAR,
-valida o identificador e chama o core. Ele canonicaliza as entradas declaradas
-no catálogo e solicita a gravação. O repository usa uma transação para registrar
-a execução, seus snapshots e valores atuais. A tela mostra o resultado/JSON.
-O snapshot preserva o valor usado mesmo se uma configuração posterior mudar.
-Sem isso, o histórico não explicaria como um resultado foi produzido.
+    apolo_web/
+      .github/workflows/tests.yml
+      .streamlit/config.toml
+      .env.example / .gitignore
+      app.py / config.py / iniciar.ps1 / render.yaml
+      core/
+        calculos.py / catalogo.py / __init__.py
+      auth/
+        provider.py / supabase_provider.py / roles.py / __init__.py
+      services/
+        apolo.py / projects.py / __init__.py
+      database/
+        contracts.py / repository.py / supabase_repository.py
+        schema.sql / __init__.py
+      integrations/
+        supabase_http.py / __init__.py
+      interface/
+        telas.py / __init__.py
+      supabase/migrations/
+        202610030001_schema.sql
+        202610030002_catalog.sql
+        202610030003_security_rpc.sql
+      tools/
+        importar_banco.py / gerar_fixtures_legado.py / iniciar_online.py
+        __init__.py
+      tests/
+        conftest.py
+        test_equivalencia.py / test_banco_e_papeis.py / test_bancos_reais.py
+        test_interface.py / test_contrato_persistencia.py
+        test_supabase_repository.py / test_supabase_auth.py
+        test_interface_online.py / test_postgres_integracao.py
+        test_render_deploy.py
+        fixtures/equivalencia_apolo_26.json / schema_apolo_26.json
+      requirements.txt / requirements-dev.txt
+      README.md / AUDITORIA.md / auditoria.json / preview.jpg
+      MANUAL_TECNICO_APOLO_WEB_IMPLEMENTADO.md
+      CHANGELOG_IMPLEMENTACAO.md
+      originals/ / data/ / .venv/ / .env   [locais, não versionados]
 
-## 6. Fluxo de autenticação
+Os arquivos AUDITORIA.md, auditoria.json e preview.jpg são históricos recebidos,
+não evidência de validação online. Pastas auxiliares do Codex não são dependências.
 
-ProvedorLocal lê APOLO_LOCAL_ROLE e retorna local-teste. Não valida senha/token;
-todas as sessões recebem o mesmo perfil do processo.
-Supabase Auth deverá validar usuário no servidor, renovar tokens, encerrar sessão
-e tratar expiração. Papel deverá vir de profile protegido, nunca de um formulário
-ou metadado de cadastro alterável pelo próprio usuário. Ainda não implementado.
+## 5. Fluxo completo de uma operação
+
+1. O navegador interage com Streamlit, que reexecuta app.py.
+2. Configuracao escolhe um par coerente: local/sqlite ou supabase/supabase.
+3. No modo online, Auth confirma o usuário e o perfil; um projeto próprio é escolhido.
+4. A tela consulta valores por ServicoApolo.consultar().
+5. Ao calcular, ServicoApolo.executar() exige CALCULAR e chama core.calculos.calcular().
+6. Somente as entradas declaradas no catálogo entram no snapshot.
+7. O repository envia uma única chamada apolo_save_execution.
+8. PostgreSQL verifica dono, catálogo, nomes e números finitos; grava execução,
+   snapshots e valores atuais na mesma transação.
+9. O ID retornado identifica a gravação. A tela mostra resultado e histórico.
+
+Se a gravação falhar, não se anuncia cálculo salvo. Se parte do snapshot for
+inválida, a transação inteira deve voltar atrás. Sem atomicidade, poderia haver
+execução no histórico sem todos os valores que explicam seu resultado.
+As operações não têm retry automático: uma resposta de rede perdida após commit
+pode deixar a execução salva; consulte o histórico antes de repetir.
+
+## 6. Fluxo de autenticação e sessão
+
+Antes, ProvedorLocal lia APOLO_LOCAL_ROLE e criava identidade de demonstração.
+Agora auth/supabase_provider.py implementa ProvedorSupabase:
+
+- POST /auth/v1/token, grant_type=password, envia email/senha ao Auth.
+- Access token, refresh token e expiração ficam somente em st.session_state.
+- Antes de expirar, o refresh token solicita uma sessão renovada.
+- GET /auth/v1/user confirma a identidade no Supabase; não se confia em JWT
+  apenas decodificado localmente.
+- A API consulta o próprio profiles. O papel vem desse registro protegido.
+- Logout pede revogação da sessão local no Auth e limpa o estado do navegador.
+
+Senha não é persistida nem colocada na linha de comando/logs. Tokens não aparecem
+no repr da sessão. O cliente é criado por sessão, sem cache global compartilhado.
+Revalidar o profile em cada execução reflete mudanças de papel no próximo rerun.
+
+Sessão é recuperada entre interações da mesma sessão Streamlit; não há cookie
+persistente customizado. Recarregar/abrir nova aba ou reiniciar o servidor pode
+exigir novo login. Isso é uma limitação deliberada, não um “lembrar de mim”.
+
+Logout não elimina imediatamente um access token JWT já emitido: ele pode valer
+até sua expiração. Se a revogação remota falhar, a interface avisa; o estado local
+continua limpo. Recuperação de senha, cadastro público, MFA e OAuth ficaram adiados.
+Usuários deste piloto são criados pelo administrador no painel Supabase.
 
 ## 7. Fluxo de autorização
 
-auth/roles.py define a matriz: OPERADOR consulta/calcula; ADMIN também configura;
-DESENVOLVEDOR também diagnostica/importa. exigir() lança PermissionError para
-ação negada. services aplica essa verificação antes da operação.
-A interface oculta páginas, mas chamar o serviço diretamente continua sujeito às
-regras. Sem autorização no serviço, seria possível contornar a proteção visual.
+auth/roles.py conserva a matriz:
 
-## 8. Estrutura PostgreSQL
+| Papel | Consultar/calcular | Configurar projeto próprio | Diagnóstico próprio |
+| --- | --- | --- | --- |
+| OPERADOR | Sim | Não | Não |
+| ADMIN | Sim | Sim | Não |
+| DESENVOLVEDOR | Sim | Sim | Sim |
 
-Ainda não criada. A etapa 4 deverá versionar migrations SQL e separar aplicação
-do schema da execução normal do programa. Não converter/destruir bancos originais.
-A equivalência continuará sendo verificada independentemente da persistência.
+Os serviços chamam exigir() antes da ação. A tela só apresenta páginas pertinentes.
+As RPCs também leem o papel protegido no banco para configuração/diagnóstico.
+Assim, chamar a API diretamente não concede essas funções ao operador.
+
+ADMIN não é dono de todos os dados: todos os papéis estão limitados aos seus
+próprios projetos. DESENVOLVEDOR tem importação na ferramenta local existente,
+mas não foi criada uma importação online nem um painel de gestão de outros usuários.
+Não há endpoint para promover a si próprio.
+
+## 8. Estrutura PostgreSQL e migrations
+
+As migrations são arquivos SQL aplicados uma vez e em ordem no projeto dedicado:
+
+| Migration | Conteúdo | Por que existe |
+| --- | --- | --- |
+| 202610030001_schema.sql | Oito tabelas, FKs, constraints, índices, RLS habilitada e grants revogados | Criar modelo online sem expor tabelas durante a instalação |
+| 202610030002_catalog.sql | 23 variáveis, seis cálculos e dependências com IDs/metadados preservados | Manter a identidade do catálogo auditado |
+| 202610030003_security_rpc.sql | Profiles, defaults de projeto, grants, policies e três RPCs | Isolamento e operações atômicas autorizadas |
+
+Cada arquivo usa transação. O app não executa migrations a cada abertura.
+Elas não são idempotentes nem uma conversão de banco legado; não as reaplique
+sobre um banco já instalado. Registre no processo de implantação quais foram aplicadas.
+Em projeto com tabelas de mesmo nome, pare e revise antes de executar.
+Não houve aplicação em banco real neste ambiente.
 
 ## 9. Tabelas e relacionamentos
 
-SQLite atual: metadata, variaveis, calculos, dependencias_calculo, execucoes,
-execucao_valores, variaveis_legado. Quatro índices completam os 11 objetos auditados.
-Uma execução referencia um cálculo e os valores referenciam execução/variável.
-Destino planejado: profiles -> usuário Auth; projects -> proprietário;
-executions -> projeto, usuário e cálculo; execution_values -> execução/variável.
-Configurações e valores atuais também precisarão de escopo de projeto.
+| Tabela | Responsabilidade e ligação |
+| --- | --- |
+| profiles | Um profile por auth.users.id; nome e papel protegido |
+| variables | Catálogo comum de variáveis, tipos, unidades e defaults |
+| calculations | Catálogo comum de cálculos e metadados da versão |
+| calculation_dependencies | Cálculo -> variável, entrada/saída e ordem |
+| projects | Projeto privado -> profiles proprietário |
+| project_values | Valor atual de cada variável em cada projeto |
+| executions | Execução -> projeto, usuário e cálculo |
+| execution_values | Snapshot -> execução e variável, papel e unidade |
 
-## 10. Políticas RLS
+    auth.users -> profiles -> projects -> executions -> execution_values
+                                  |          |
+                                  v          v
+                            project_values  calculations
+                                  |              |
+                                  v              v
+                               variables <- calculation_dependencies
 
-Ainda não implementadas. RLS limita linhas acessíveis no banco, além das regras
-da aplicação. Projetos/execuções deverão respeitar o proprietário/escopo; configurações
-deverão respeitar papel; usuários não poderão promover a si próprios.
-O acesso normal deve usar JWT individual; chave administrativa que contorna RLS
-não deve ser o meio normal de acesso. Validação futura exigirá dois usuários,
-leituras cruzadas negadas e tentativas de escrita/promoção negadas.
+UUIDs identificam usuários/projetos/execuções. IDs estáveis do Apolo identificam
+variáveis e cálculos. Double precision mantém representação de float Python;
+não houve arredondamento novo na persistência. Snapshots são imutáveis para o cliente.
+Valores atuais são atualizados; o histórico não depende deles para se explicar.
+
+## 10. Políticas RLS, grants e RPCs
+
+RLS foi escrita, mas ainda exige a execução real dos testes SQL. As políticas:
+
+| Alvo | Regra de leitura/escrita |
+| --- | --- |
+| profiles | Só ler o próprio; nenhuma escrita concedida ao cliente |
+| variables/calculations/dependencies | Leitura para usuário autenticado; sem escrita de cliente |
+| projects | Ler os próprios; criar somente com owner_id=auth.uid() |
+| project_values | Ler somente valores de projeto próprio; escrita só por RPC |
+| executions | Ler se user_id=auth.uid() e projeto pertence ao usuário |
+| execution_values | Ler se execução pai pertence ao usuário; escrita só por RPC |
+
+Anon não recebe SELECT ou EXECUTE nas operações Apolo. O trigger de profiles
+sempre cria OPERADOR, mesmo que metadata do cadastro peça desenvolvedor.
+O trigger de projeto inicializa seus 23 valores.
+
+apolo_save_execution valida dono e snapshot, bloqueia o projeto durante a operação
+e grava tudo atomicamente. apolo_configure exige ADMIN/DESENVOLVEDOR e impede
+alteração de saída. apolo_diagnostics exige DESENVOLVEDOR e só retorna contagens
+do contexto próprio. Funções definer usam search_path vazio, nomes qualificados,
+grants explícitos e helpers em schema privado não exposto.
+
+Funções SECURITY DEFINER operam com privilégios do dono: por isso não basta
+habilitar RLS nas tabelas; as funções também verificam auth.uid e dono/papel.
+Sem isso, uma RPC poderia contornar o isolamento.
+A chave service_role/sb_secret contorna proteções e nunca é usada pelo app.
+
+A RPC não recalcula as equações SQL. Ela valida a estrutura e números e recebe
+os resultados calculados pelo core. Um cliente que chame a API diretamente pode
+forjar resultados nos próprios projetos. O piloto garante isolamento/autorização,
+não certificação científica contra adulteração do próprio autor. Se for exigido
+histórico certificado, será necessário um backend confiável de cálculo.
+
+Referências: [RLS Supabase](https://supabase.com/docs/guides/database/postgres/row-level-security),
+[profiles e triggers](https://supabase.com/docs/guides/auth/managing-user-data).
 
 ## 11. Como Streamlit usa services
 
-interface/telas.py chama consultar, executar, historico, detalhe e configurar.
-Recebe listas/dicionários para formulários, tabelas e mensagens. Os testes AppTest
-exercitam esse fluxo. A interface ainda usa repo.path em chaves e diagnósticos;
-na etapa online isso deverá ser uma identidade de contexto, não um arquivo fictício.
+app.py é a composição: configura, autentica, seleciona projeto/banco e cria serviço.
+interface/telas.py apresenta cálculo, histórico, variáveis, administração e diagnóstico.
+Ela chama o serviço; não faz SQL nem decide a fórmula.
+
+Antes, chaves da interface e diagnósticos usavam repo.path. Agora repo.contexto
+identifica o banco local ou usuário/projeto online. Resultados de um contexto
+não são reapresentados como se fossem de outro. Diagnóstico passa pelo serviço,
+em vez de ler arquivo diretamente. Sem isso, a tela dependeria de um SQLite fictício.
 
 ## 12. Como services usam repositories
 
-ServicoApolo recebe repo no construtor e delega persistência. A injeção permite
-troca, mas o contrato ainda é implícito. A etapa 3 deverá explicitar apenas
-variaveis, salvar_execucao, configurar, historico e detalhe, acrescentando
-operações de projeto quando efetivamente usadas.
+database/contracts.py contém Protocol RepositorioCalculos: contexto, variaveis,
+salvar_execucao, configurar, historico, detalhe e diagnostico. É um contrato
+estrutural: implementações oferecem as operações, sem herança obrigatória.
 
-## 13. SQLite x SupabaseRepository
+ServicoApolo usa esse contrato, não um SQLite concreto. ServicoProjetos valida
+nome (1 a 120 caracteres), exige permissões e delega criar/listar/selecionar.
+Não foi acrescentada uma interface genérica enorme para operações inexistentes.
 
-SQLite usa arquivo local/transações diretas. O futuro repository Supabase enviará
-operações autenticadas ao PostgreSQL pela rede, tratando indisponibilidade,
-acesso negado e consistência. Gravação de execução/valores precisará ser atômica.
-A interface deverá mostrar o mesmo conteúdo sem depender de caminho de arquivo.
+Um teste com repository em memória prova que o serviço calcula/salva sem arquivo
+e rejeita permissões fora da interface. Sem contrato, detalhes de um banco
+poderiam escapar para as regras de aplicação.
+
+## 13. SQLite x RepositorioSupabase
+
+| Característica | SQLite | Supabase |
+| --- | --- | --- |
+| Transporte | Arquivo local | HTTPS REST/RPC |
+| Identidade do contexto | Caminho de banco | UUID de usuário e projeto |
+| Execução | Transação SQL local | RPC PostgreSQL atômica |
+| ID de execução | Inteiro | UUID |
+| Valores atuais | Por banco | Por projeto |
+| Isolamento | Papel local demonstrativo | JWT, grants, RLS e guardas de RPC |
+| Disponibilidade | Pasta gravável | Rede e serviços externos |
+
+O schema SQLite foi conservado para equivalência, importação e testes.
+Não se obrigou o schema online a imitar um arquivo de usuário único.
+O repository online adapta aliases para a interface continuar recebendo listas/dicts
+sem saber se o ID é inteiro ou UUID. Falhas de sessão/rede são diferentes de erro matemático.
 
 ## 14. Variáveis de ambiente
 
-Atuais: APOLO_AUTH_MODE=local, APOLO_LOCAL_ROLE e APOLO_DATA_DIR.
-.env.example documenta exemplos; o app não carrega .env automaticamente.
-Ambiente verificado: Python 3.12.10, Streamlit 1.64.0, pytest 9.1.1.
-Nomes/validação das opções de produção serão documentados ao implementar a integração.
+| Nome | Uso |
+| --- | --- |
+| APOLO_ENV | development ou production; Render exige production |
+| APOLO_AUTH_MODE | local ou supabase |
+| APOLO_REPOSITORY_MODE | sqlite ou supabase, combinado com auth |
+| APOLO_LOCAL_ROLE | operador/admin/desenvolvedor, só local |
+| APOLO_DATA_DIR | Pasta SQLite local opcional |
+| SUPABASE_URL | URL HTTPS do projeto online |
+| SUPABASE_PUBLISHABLE_KEY | Publishable; anon legada aceita; secret/service_role rejeitadas |
+| PORT | Porta do processo online; default 10000, intervalo 1..65535 |
+| PYTHON_VERSION | Python 3.12.10 no Render |
+| APOLO_TEST_POSTGRES_DSN | Conexão de PostgreSQL dedicado de testes, não produção |
+| APOLO_TEST_POSTGRES_ISOLATED | Deve ser 1 para autorizar bootstrap de teste |
 
-## 15. Secrets
+.env.example é documentação. O programa **não carrega .env automaticamente**.
+Defina valores no terminal ou painel Render. URL não permite credenciais,
+query/path/fragment. Produção recusa provider local e combinações inconsistentes.
+O iniciador valida isso antes de abrir porta. Não imprimir valores em relatórios.
 
-Credenciais permitem acesso a contas/dados. Uma credencial no histórico pode
-continuar recuperável depois de apagar o arquivo. .env, .streamlit/secrets.toml,
-originals e bancos locais estão ignorados. Não foram lidas/incluídas credenciais
-reais neste marco. Antes de cada commit, revisar explicitamente os arquivos staged.
+## 15. Secrets e proteção do Git
 
-## 16. Configuração Supabase
+Senha de usuário, refresh/access token, senha PostgreSQL e chave administrativa
+são credenciais. Não entram no Git nem devem ser enviadas nesta conversa.
+Mesmo apagar uma credencial de um arquivo pode deixá-la no histórico Git.
+Em caso de vazamento, revogue/rotacione; não basta apagar.
 
-Pendente. Será necessário projeto de desenvolvimento, schema com RLS,
-configuração de Auth e usuários de teste. A ação externa será solicitada quando
-código/migrations/roteiro estiverem prontos. Nenhum recurso Supabase foi alterado.
+A publishable key é pública por desenho do Supabase, mas seus valores reais
+também são configurados externamente, não no código. A proteção dos dados
+vem de JWT/RLS/grants, não de esconder uma chave pública.
+.gitignore exclui .env e variantes, secrets.toml, originals, data e venv.
+Nenhum dado real ou secret foi necessário para escrever/testar este pacote.
+
+## 16. Configuração Supabase — ação externa necessária
+
+1. Crie um projeto dedicado de desenvolvimento, sem dados reais e sem tabelas Apolo
+   existentes. Guarde a senha do banco fora do Git.
+2. Antes de aplicar SQL, confirme CI PostgreSQL verde.
+3. No SQL Editor, aplique 001, depois 002, depois 003, exatamente uma vez.
+4. Confira oito tabelas, 23 variáveis, seis cálculos, RLS habilitada e funções.
+5. Em Authentication, mantenha email/password disponível. Para este piloto,
+   crie contas de teste pelo painel, confirmadas, sem cadastro público na interface.
+6. Use pelo menos dois operadores e uma conta administrativa para validar isolamento.
+   A criação de conta produz profile operador automaticamente.
+7. Quando necessário, promova a conta correta usando SQL administrativo:
+
+       update public.profiles set role='admin' where id='<UUID da conta de teste>';
+
+   Faça o mesmo para desenvolvedor em conta de teste específica. Nunca conceda
+   UPDATE de profiles ao authenticated nem use user_metadata.role como autoridade.
+8. Configure a URL e publishable key no ambiente do app. Não envie senha/token.
+9. Faça os testes da seção 26. Não carregue bancos legados em produção neste piloto.
+
+Ao usar SQL Editor manualmente, mantenha registro das migrations aplicadas.
+Os testes de bootstrap PostgreSQL NÃO devem ser apontados para este Supabase:
+eles criam auth/users/roles e são feitos para banco descartável vazio.
+Referência Auth: [endpoints oficiais](https://github.com/supabase/auth/blob/master/openapi.yaml).
 
 ## 17. Configuração Render
 
-Pendente. Streamlit deverá usar 0.0.0.0 e a porta do serviço, com dados no Supabase.
-A configuração atual usa 127.0.0.1 para execução local; não é um deploy pronto.
-Nenhum recurso Render foi criado ou alterado.
+render.yaml prepara Web Service Python, plano free, branch feature/render-deploy,
+auto-deploy off, sem disco/banco Render. Plano pago não foi contratado.
+O nome apolo-web é um template: revise se já houver serviço com esse nome.
+
+Build: python -m pip install -r requirements.txt
+Start: python -m tools.iniciar_online
+Health: /_stcore/health
+Endereço: 0.0.0.0; porta: PORT do Render.
+
+O iniciador sobrescreve address/port locais por argumentos. No Linux ele
+substitui o processo por Streamlit; no Windows usa subprocess com argumentos
+separados para suportar caminhos com espaços. Não usa shell nem expõe secrets.
+Não foram desativadas proteções CORS/XSRF.
+
+Health ok indica processo Streamlit funcionando, não banco/Auth funcionando.
+Só o login/cálculo/histórico reais confirmam dependências externas.
+Referências: [Web Services](https://render.com/docs/web-services),
+[Blueprint](https://render.com/docs/blueprint-spec).
 
 ## 18. Configuração GitHub Actions
 
-.github/workflows/tests.yml usa Python 3.12, instala requirements-dev, verifica
-ausência de originals/bancos reais e executa python -m pytest tests -q.
-Dispara em push de main, develop e feature/**, PR para main/develop ou manualmente.
-Usa permissão contents: read.
-Referência: [documentação oficial do GitHub](https://docs.github.com/en/actions/tutorials/build-and-test-code/python).
-Workflow preparado, ainda não enviado/executado. Não há evidência de CI verde.
-Sem CI, a integração depende de cada pessoa lembrar de rodar os testes.
+.github/workflows/tests.yml executa Python 3.12, instala requirements-dev,
+confere ausência dos ativos privados e roda pytest tests -q.
+Push em main/develop/feature/**, PR main/develop e execução manual disparam a CI.
 
-## 19. Arquivos criados
+Um serviço PostgreSQL 16 vazio é criado em cada job. A senha apolo_test é somente
+do container descartável, não credencial real. DSN e flag isolated habilitam
+os oito testes de migrations, grants, RLS, papéis, rollback e 600 snapshots.
+auth.users/auth.uid são stubs de preparação; PostgreSQL, RLS e transações são reais.
+Isso não testa o servidor Supabase Auth ou o gateway PostgREST real.
 
-Nesta continuação: workflow, manual e changelog.
-Fixtures e gerador foram recebidos não versionados.
-Fora do repo: runner diagnóstico, cópia portátil e roteiro PowerShell para
-testes/commit manual. Auxiliares não são dependências do aplicativo ou da CI.
+O job tem apenas contents: read. PostgreSQL deve estar saudável antes dos testes.
+CI remota ainda não executou: o Git HTTPS falhou por credenciais/certificados
+do ambiente. A alternativa OpenSSL também falhou verificação de cadeia;
+verificação TLS permaneceu habilitada.
 
-## 20. Arquivos alterados: antes, depois e motivo
+Com o mesmo código e tudo disponível, espera-se 688 passed, 3 skipped na CI;
+**é uma expectativa, não um resultado observado**. Os três skips são históricos.
+Referência: [PostgreSQL em Actions](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers).
 
-| Arquivo | Antes | Depois e motivo |
-| --- | --- | --- |
-| tests/test_equivalencia.py | Migração JSON iniciada pelo usuário | Protege 600 pares cálculo/seed, cinco inválidos e SHA; mantém AST e verifica SHA local. Evita referência truncada/duplicada. |
-| tests/test_banco_e_papeis.py | Executava fonte legada obrigatoriamente | Compara SQLite novo com JSON auditado; verifica 11 objetos/SHA. Permite checkout sem originals. |
-| tests/test_bancos_reais.py | Exigia bancos históricos sempre | Skip por arquivo ausente; auditorias continuam completas quando presentes. |
-| README.md | Descrevia suíte anterior | Explica fixtures e resultados diagnósticos sem declarar CI concluída. |
+## 19. Todos os arquivos criados, relativos à baseline
 
-Fórmulas, catálogo, schema SQLite e comportamento do app não foram alterados.
+| Arquivos | Conexão e necessidade |
+| --- | --- |
+| .github/workflows/tests.yml | Testa mudanças sem depender da máquina do autor |
+| MANUAL_TECNICO_APOLO_WEB_IMPLEMENTADO.md; CHANGELOG_IMPLEMENTACAO.md | Explicação e rastreabilidade |
+| tests/fixtures/equivalencia_apolo_26.json; schema_apolo_26.json | Referências auditadas portáteis |
+| tools/gerar_fixtures_legado.py | Regenera referência somente a partir do legado local |
+| database/contracts.py | Contrato usado pelo serviço e pelos dois backends |
+| config.py | Valida modo e impede produção fictícia |
+| integrations/__init__.py; supabase_http.py | Pacote e transporte HTTPS sem secrets em erros |
+| database/supabase_repository.py | Traduz operações para PostgREST/RPC com JWT |
+| services/projects.py | Casos de uso/autorização de projetos |
+| auth/supabase_provider.py | Login, refresh, identidade/perfil e logout reais |
+| supabase/migrations/202610030001_schema.sql | Modelo relacional online |
+| supabase/migrations/202610030002_catalog.sql | Catálogo preservado |
+| supabase/migrations/202610030003_security_rpc.sql | RLS, grants, triggers e RPCs |
+| render.yaml; tools/iniciar_online.py | Deploy reproduzível e startup seguro |
+| tests/test_contrato_persistencia.py | Prova desacoplamento/autorizações |
+| tests/test_supabase_repository.py | Configuração, transporte e contrato REST |
+| tests/test_supabase_auth.py | Sessões, perfis e falhas Auth |
+| tests/test_interface_online.py | Interface online/seis cálculos sem criar SQLite |
+| tests/test_postgres_integracao.py | SQL/RLS/transações reais em banco descartável |
+| tests/test_render_deploy.py | Porta, produção, caminhos com espaços e template |
 
-## 21. Testes existentes e verificações reforçadas
+O gerador e as fixtures haviam sido criados pelo usuário antes do commit 663bd2c;
+“criado” nesta tabela significa novo em Git em relação à baseline.
 
-Preservados: 600 comparações exatas, seis referências independentes, cinco
-inválidos de Breguet, quatro entradas NaN/inf/overflow, schema, snapshots,
-rollback, importação, concorrência, permissões e sete testes de interface.
-Reforçado o teste de cardinalidade recebido para verificar exatamente 100 seeds
-por cálculo, cinco inválidos e SHA fixo. O schema verifica 11 objetos e SHA.
-A auditoria local verifica SHA da fonte e equivalência AST com notebook.
-O core novo não foi usado para gerar as saídas esperadas.
+## 20. Todos os arquivos alterados, relativos à baseline
 
-## 22. Resultados deste marco
+| Arquivo | Antes -> depois; por que; risco sem mudança |
+| --- | --- |
+| app.py | SQLite/fake -> composição local/online, login e projetos; sem isso não há fluxo multiusuário |
+| auth/provider.py | Local sem guarda de produção -> modo local explícito; evita identidade fictícia online |
+| database/repository.py | SQLite sem contrato explícito -> contexto/diagnóstico; mantém schema/transações intactos |
+| services/apolo.py | Dependência implícita -> Protocol e diagnóstico autorizado; evita acoplamento/acesso lateral |
+| interface/telas.py | repo.path -> contexto e diagnóstico pelo serviço; evita dependência de arquivo em produção |
+| iniciar.ps1 | Fallback de Python Codex -> venv própria/sistema e local/sqlite explícitos; portabilidade |
+| .gitignore | Ignorava bancos seletivos -> toda data e variantes .env; evita dados/secrets versionados |
+| .env.example | Só local -> opções online/porta/testes, sem valores reais; configuração reproduzível |
+| README.md | Instruções do ambiente anterior -> dois modos e evidências/limitações; evita deploy inseguro |
+| requirements-dev.txt | pytest -> também psycopg[binary] 3.3.6; driver só para testes PostgreSQL reais |
+| tests/test_equivalencia.py | Fonte obrigatória -> JSON + auditoria opcional; conserva cobertura e SHA/seeds |
+| tests/test_banco_e_papeis.py | Legado obrigatório -> schema JSON; mantém comparação exata de 11 objetos |
+| tests/test_bancos_reais.py | Bancos obrigatórios -> skip por ausência, auditoria preservada quando presentes |
 
-| Ambiente | Passed | Skipped | Failed | Observação |
+requirements.txt, core/calculos.py, core/catalogo.py, database/schema.sql,
+.streamlit/config.toml e fórmulas permaneceram inalterados.
+iniciar.ps1 roda localhost; o iniciador online atende ao endereço de produção.
+
+## 21. Testes existentes e novos
+
+Os testes originais mantêm 600 equivalências, seis resultados independentes,
+cinco Breguet inválidos, NaN/inf/overflow, schema, autorização, snapshots,
+rollback, concorrência, importação e interface local.
+As fixtures não foram recalculadas pelo novo core para “confirmar a si mesmo”.
+
+Novos testes verificam repository sem path, RPC única, projeto/contexto, catálogo
+completo, erros HTTP seguros, key administrativa rejeitada, refresh expirado,
+profile errado/ausente, rede diferente de credencial inválida, logout e UI online.
+AppTest atravessa formulários e serviços com API controlada, incluindo os seis
+cálculos, histórico e criação de projeto. Não representa login real.
+
+Os oito testes PostgreSQL são pulados somente quando não há DSN. Se a CI fornecer
+DSN e o driver faltar, ou SQL/RLS falhar, devem falhar, não virar skip.
+O bootstrap exige isolated=1 e recusa um banco que já contém profiles;
+não apaga tabelas para se acomodar a um banco existente.
+
+## 22. Resultado final observado e pendências de evidência
+
+| Execução | Passed | Skipped | Failed | Evidência |
 | --- | ---: | ---: | ---: | --- |
-| Clone real, runner diagnóstico | 640 | 0 | 0 | Mesmos testes; tmp_path com ACL herdada. |
-| Cópia sem originals/data, runner diagnóstico | 637 | 3 | 0 | Duas auditorias de bancos e uma de notebook puladas. |
-| pytest padrão no sandbox, tentativa inicial | 620 | 0 | 0 | 20 erros de setup por PermissionError; não é sucesso completo. |
-| pytest padrão fora do sandbox | — | — | — | Pendente. |
-| GitHub Actions | — | — | — | Pendente. |
+| 663bd2c, terminal usuário com ativos | 640 | 0 | 0 | pytest padrão informado pelo usuário |
+| 663bd2c, cópia portátil usuário | 637 | 3 | 0 | pytest padrão informado pelo usuário |
+| 49f602f, estabilização | 637 | 3 | 0 | Runner diagnóstico |
+| 40d863c, contrato | 639 | 3 | 0 | Runner diagnóstico |
+| bce8338, database/RLS | 652 | 11 | 0 | Runner diagnóstico; SQL real pulado |
+| c00bdad, Auth/UI | 671 | 11 | 0 | Runner diagnóstico + AppTest |
+| 2ba3979, CI/Render | 680 | 11 | 0 | Runner diagnóstico, 15,18 s |
 
-Plugin diagnóstico substitui apenas tmp_path por pastas únicas com ACL herdada,
-desabilitando tmpdir/cache. Não altera ACL, código dos testes ou bibliotecas.
-Também há erro de limpeza de TemporaryDirectory na saída do processo do sandbox,
-sem falhas nos testes. Resultado diagnóstico não substitui confirmação padrão/remota.
+O sandbox não consegue usar certos temporários criados pelo pytest/Python:
+a tentativa padrão anterior produziu erros de setup. O runner auxiliar, fora
+do repo, substitui apenas tmp_path por diretórios únicos com permissões herdadas
+e desativa tmpdir/cache. Não alterou ACLs, testes ou bibliotecas.
+Há ainda PermissionError na limpeza de TemporaryDirectory ao encerrar o processo.
+Isso NÃO conta como execução padrão integral aprovada para o novo marco.
+
+Validação de fumaça: Streamlit local respondeu ok em 8517; iniciador online com
+configuração de exemplo respondeu ok em 0.0.0.0:8518. Ambos foram encerrados.
+Não houve login/cálculo numa conta Supabase nem validação manual por navegador.
+CI, PostgreSQL real e testes padrão do novo código precisam de confirmação.
 
 ## 23. Como rodar localmente
 
-Na raiz, com Python 3.12:
+Na raiz do projeto, Python 3.12:
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-$env:APOLO_AUTH_MODE = 'local'
-$env:APOLO_LOCAL_ROLE = 'operador'
-.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1
-.\.venv\Scripts\python.exe -m pytest tests -q
-```
+    python -m venv .venv
+    .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+    .\.venv\Scripts\python.exe -m pytest tests -q
 
-Não é necessário ativar a venv ou mudar a política global de scripts.
+Recrie venv se mover/clonar o projeto; ela não faz parte do pacote.
+Não é preciso ativar a venv ou mudar a política global de scripts.
 
-## 24. Modo dev/local com SQLite
+## 24. Como rodar em dev/local com SQLite
 
-Escolha papel de teste no ambiente e pasta gravável em APOLO_DATA_DIR.
-O app cria banco novo se não houver bancos de trabalho.
-Para legado, use o importador: valida schema e cria uma cópia nova; não grava
-em originals. Permissões locais são para demonstração, sem isolamento de usuários.
+    $env:APOLO_ENV='development'
+    $env:APOLO_AUTH_MODE='local'
+    $env:APOLO_REPOSITORY_MODE='sqlite'
+    $env:APOLO_LOCAL_ROLE='operador'
+    .\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1
 
-## 25. Modo produção/Supabase
+Ou iniciar.ps1 -Perfil operador/admin/desenvolvedor.
+APOLO_DATA_DIR é opcional. Ausência de bancos cria banco novo com defaults.
+Importação local valida antes de copiar; não migra/destrói a fonte.
+O provider local não é segurança multiusuário; nunca exponha esse modo na internet.
 
-Ainda indisponível. O provider recusa modo diferente de local, evitando
-autenticação fictícia. Instruções completas dependem das etapas 3 a 7.
-Não publicar esta versão como aplicação multiusuário.
+## 25. Como rodar em produção/Supabase
 
-## 26. Como realizar deploy
+Depois de configurar migrations e contas:
 
-Após a migração: aplicar migrations em projeto de teste, configurar Auth,
-executar testes de RLS, configurar Render e validar fluxo real antes de liberar.
-Build/start/secrets e passos exatos serão incluídos quando implementados.
+    $env:APOLO_ENV='production'
+    $env:APOLO_AUTH_MODE='supabase'
+    $env:APOLO_REPOSITORY_MODE='supabase'
+    $env:SUPABASE_URL='<URL HTTPS do seu projeto>'
+    $env:SUPABASE_PUBLISHABLE_KEY='<publishable key>'
+    $env:PORT='10000'
+    .\.venv\Scripts\python.exe -m tools.iniciar_online
 
-## 27. Diagnóstico e bloqueio atual
+Para ensaio apenas no seu computador, use as mesmas quatro opções online,
+APOLO_ENV=development e Streamlit diretamente com address 127.0.0.1.
+No Render, nunca use APOLO_ENV=development. Tokens/senhas são digitados no login,
+não nesses exemplos. O modo online não cria nem consulta SQLite local.
 
-Git retorna Unable to create .git/index.lock: Permission denied mesmo após
-permissão de escrita concedida. Clones independentes falharam na criação de
-signal pipe do processo sh. Nenhuma ACL/metadata foi alterada por outra via.
-Isso impede os commits/branches exigidos antes da próxima mudança estrutural.
-A ação mínima é executar o roteiro entregue no terminal normal.
-Ele valida os testes e registra só os arquivos deste marco, sem merge/push.
+## 26. Deploy e validação ponta a ponta — checklist obrigatório
 
-Erros de cálculo devem ser separados de falhas de infraestrutura.
-Para SQLite, verificar schema, integridade e pasta gravável.
-Um erro de diretório temporário não justifica excluir teste ou mudar uma fórmula.
+Primeiro importe o bundle no clone original usando o roteiro entregue. Ele cria
+um ponto de retorno e transporta branches sem sobrescrever originals/data.
+Rode pytest padrão do novo marco; publique feature/render-deploy sem force.
+Abra Actions no GitHub e confirme os testes PostgreSQL, não apenas testes mock.
 
-## 28. Limitações conhecidas
+Depois configure Supabase conforme seção 16. No Render, conecte o repositório
+privado e escolha a feature validada/Blueprint. Configure URL e publishable key
+no painel, sem colar secrets em arquivos. Faça deploy manual apenas após CI verde.
+Confira startup e health; abra o app HTTPS e execute:
 
-Sem Auth real, isolamento, PostgreSQL, RLS ou deploy. Dependência de repo.path
-na tela e configuração local do iniciador ainda exigem revisão.
-CI remota e pytest padrão pendentes. Interface verificada por AppTest;
-nenhuma validação manual por navegador neste marco.
+| Verificação real | Resultado esperado | Estado neste pacote |
+| --- | --- | --- |
+| Login correto/incorreto e logout | Identidade real; recusa segura; estado limpo | Pendente |
+| Expiração/refresh e conta sem profile | Renovação ou novo login; falha fechada | Pendente |
+| Operador, admin e desenvolvedor | Matriz de papel na UI, serviço e banco | Pendente |
+| Criar/selecionar dois projetos | Defaults e históricos separados | Pendente |
+| Os seis cálculos e histórico | Referências e snapshots equivalentes | Mock aprovado; real pendente |
+| Dois usuários tentam acesso cruzado | SELECT vazio e RPC negada | SQL escrito; real pendente |
+| Alterar papel/defaults direto pela API | Negado ao cliente | SQL escrito; real pendente |
+| Reiniciar serviço | Dados conservados; novo login se necessário | Pendente |
+| Novo deploy | Mesmo histórico no Supabase, sem SQLite Render | Pendente |
+| CI com 600 snapshots | Persistência exata em PostgreSQL | Pendente |
 
-## 29. Decisões adiadas
+Registre data, commit, evidência e resultado de cada item, sem tokens/senhas.
+Só então integre a versão validada em develop remoto e, após aprovação, main.
+Nenhum merge em main ou deploy externo foi feito por este pacote.
 
-Empresas/equipes não entram agora. Compartilhamento, recuperação de senha e
-privilégios administrativos concretos serão definidos nas etapas correspondentes.
-Papéis locais não devem virar acesso irrestrito a todos os usuários online.
+## 27. Como diagnosticar erros
 
-## 30. Próximos passos e Apolo 3
+- Configuração recusada: confira par auth/repository e production no Render.
+- Não entra: confirme conta/email/password e confirmação no Supabase; não exponha erro bruto.
+- Perfil ausente: confira migration 003, trigger e registro do próprio usuário.
+- Projeto/catálogo incompleto: confira 23 defaults, seed e ordem das migrations.
+- HTTP 401: sessão expirada; novo login/refresh. HTTP 403: escopo/papel/grants.
+- Erro REST/RPC genérico: verifique migrations, cache PostgREST e logs no painel,
+  sem copiar cabeçalhos Authorization.
+- Health verde e cálculo falha: health só mede Streamlit; teste dependência externa.
+- SQLite: pasta gravável, integridade/schema; não “corrigir” apagando dados reais.
+- Git HTTPS deste ambiente: publicar pelo terminal normal autenticado; não desabilitar TLS.
+- Temporários de teste: usar terminal normal para pytest padrão; não remover cobertura
+  nem alterar fórmula para resolver PermissionError.
 
-Registrar o marco/testes padrão; integrar em develop; estabilizar ambiente;
-extrair contrato; implementar schema/repository; Auth; RLS; projetos/UI;
-confirmar CI; preparar Render; validar cálculo, histórico, isolamento,
-sessão, reinício e novo deploy.
-Apolo 3 poderá acrescentar compartilhamento e modelos físicos com novas
-referências independentes/migrations. Para um projeto didático menor,
-reutilize interface -> serviço -> repository com um caso simples por usuário.
+Erro de rede não causa retry/gravação automática. Verifique histórico antes de repetir.
+Diagnóstico da interface só traz informações do contexto autorizado, não secrets.
 
-## 31. Glossário
+## 28. Limitações e riscos remanescentes
 
-| Termo | Função |
+SQL/RLS preparados mas ainda não executados em PostgreSQL real.
+CI/deploy não publicados; Supabase Auth/PostgREST e reinícios ainda não validados.
+Sessão não persistente entre novas conexões; logout segue validade natural do JWT.
+Sem recuperação de senha/cadastro público, compartilhamento, gestão global de usuários,
+importação SQLite->online, paginação além das últimas 200 execuções e soft-delete.
+Uma chamada direta autorizada pode forjar resultados próprios, conforme seção 10.
+Sem chave de idempotência, retry manual após resposta perdida pode duplicar execução.
+
+Runtime pinado em Streamlit 1.64.0; dependências transitivas não têm lock completo.
+O plano free do Render é apenas piloto; verifique limites/pausas no painel antes
+de usar como serviço operacional. Backup/restore do Supabase deve ser planejado
+antes de incluir dados reais. Não há benchmark/carga ou auditoria externa de segurança.
+
+## 29. Decisões adiadas e preservação de escopo
+
+Não modelar empresas/equipes agora. Admin/developer não ganham acesso a terceiros.
+Não portar regras matemáticas para SQL ou Streamlit. Não automatizar migrations
+com credencial administrativa no processo web. Não contratar serviços pagos.
+Não regenerar fixtures nem migrar bancos originais sem necessidade.
+Não esconder falhas reais de CI com skips nem enfraquecer TLS/CORS/XSRF.
+
+A parte externa requer somente conexão autenticada ao GitHub e configuração do
+projeto Supabase/serviço Render. Os valores reais permanecem no seu ambiente.
+
+## 30. Caminho sugerido para Apolo 3 e aprendizado
+
+Primeiro concluir o checklist real e registrar resultados. Depois avaliar
+idempotência, paginação, autenticação persistente/recuperação de senha, backups,
+compartilhamento e backend de cálculo certificado. Novas fórmulas exigem referências
+independentes, testes explícitos e versionamento dos metadados/migrations.
+
+Para seu próximo programa simples, replique o percurso com um cadastro:
+tela -> serviço com permissão -> contrato -> repository -> tabela com dono/RLS.
+Só depois acrescente histórico e papéis. Não copie engenharia/complexidade
+que não existe no problema. Essa separação permite testar Python sem internet
+e substituir o banco sem reescrever a interface ou regra.
+
+## 31. Glossário das tecnologias
+
+| Termo | Significado no projeto |
 | --- | --- |
-| Streamlit | Interface Python reexecutada nas interações. |
-| Core | Fórmulas/validações independentes de infraestrutura. |
-| Serviço | Caso de uso e autorização. |
-| Repository | Encapsula persistência. |
-| SQLite | Banco em arquivo local. |
-| PostgreSQL | Banco relacional planejado para produção. |
-| Supabase | PostgreSQL, Auth e API planejados. |
-| Auth | Identifica quem é o usuário. |
-| Autorização | Decide operações permitidas. |
-| RLS | Restringe linhas acessíveis no banco. |
-| JWT | Token verificável de identidade/sessão. |
-| Migration | Evolução versionada do schema. |
-| Fixture | Referência ou preparação de teste. |
-| Snapshot | Valores imutáveis de uma execução. |
-| SHA-256 | Identificador criptográfico de conteúdo. |
-| CI | Testes automatizados de alterações. |
-| Render | Hospedagem planejada do app. |
-| Secret | Credencial fora do Git. |
-| Branch | Linha de desenvolvimento. |
-| Commit | Ponto registrado no histórico. |
-| ACL | Permissões do sistema de arquivos. |
+| Streamlit/rerun | Interface Python; interações reexecutam o script |
+| Session state | Memória individual da conexão Streamlit |
+| Core | Fórmulas e catálogo independentes |
+| Serviço | Caso de uso com autorização |
+| Protocol | Contrato estrutural de operações |
+| Repository | Tradutor entre caso de uso e persistência |
+| SQLite | Banco em arquivo para desenvolvimento/legado |
+| PostgreSQL | Banco relacional online |
+| Supabase | PostgreSQL, Auth e API gerenciados |
+| PostgREST | API HTTP de tabelas/funções PostgreSQL |
+| Auth/JWT | Confirma identidade e apresenta token assinado |
+| Access/refresh token | Acesso temporário/renovação de sessão |
+| Papel | Conjunto de operações permitido |
+| RLS | Política que restringe linhas acessíveis |
+| Grant | Permissão SQL de operação sobre objeto |
+| RPC | Chamada de função de banco pela API |
+| SECURITY DEFINER | Função executada com privilégios do dono |
+| Transação/rollback | Tudo gravado junto ou nada gravado |
+| Snapshot | Registro dos valores usados em execução |
+| Migration | Alteração SQL versionada e aplicada em ordem |
+| Fixture/SHA-256 | Referência de teste/identificador do conteúdo auditado |
+| CI/Actions | Execução automatizada de testes no GitHub |
+| Render/Blueprint | Hospedagem do processo/arquivo de configuração |
+| Secret/TLS | Credencial/conexão criptografada verificada |
+| Feature/develop/main | Mudança isolada/integração/versão estável |
+| Commit/bundle | Ponto no histórico/pacote transportável de commits |
+| Mock/AppTest | Resposta controlada/teste programático da interface |
+| Teste de fumaça | Verificação básica de startup, não validação integral |
+
+Consulte CHANGELOG_IMPLEMENTACAO.md para a relação etapa/commit e o relatório
+entregue para o estado de bloqueio externo. Este manual deve receber as evidências
+reais na próxima execução; seu título não significa deploy concluído.

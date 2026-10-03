@@ -21,5 +21,5 @@ class ProvedorLocal:
 def obter_identidade() -> Identidade:
     modo = os.environ.get("APOLO_AUTH_MODE", "local")
     if modo != "local":
-        raise RuntimeError("O provedor de autenticação ainda não está integrado. Use o modo local para testes.")
+        raise RuntimeError("obter_identidade é exclusivo do modo local. Para login online, use ProvedorSupabase.")
     return ProvedorLocal().identificar()
