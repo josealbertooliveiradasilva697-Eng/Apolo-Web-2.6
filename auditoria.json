@@ -1,0 +1,1157 @@
+{
+  "data": "2026-10-02",
+  "arquivos": {
+    "123.db": {
+      "bytes": 81920,
+      "sha256": "14638069a5d537a336ca2bc412f0122d506576ca77ded4ea5f2ede15ceea8266"
+    },
+    "Apolo_2_6.ipynb": {
+      "bytes": 308855,
+      "sha256": "1a63d641fbdf19e8bd4bd56e9460eb7e91db6cc307e2335a9af55cbf1aee9eba"
+    },
+    "Apolo_2_6_exportado.py": {
+      "bytes": 64343,
+      "sha256": "b06d2d4e064fdafd8c2edae0130435175022da7c62dc2221ee881edb1ae949e7"
+    },
+    "Banco_de_Variaveis_Calculo_1.db": {
+      "bytes": 81920,
+      "sha256": "9bb05ed7887d71950a0874c6d73ab70885f55e86e01b934c2eb8a2cfd906d59e"
+    },
+    "Manual_Tecnico_Apolo_2.6.0.pdf": {
+      "bytes": 814499,
+      "sha256": "a2b13c1dcb3495625c35a1ba0fe1c1b1ede65b425bb6fd1699a410fa7de22eba"
+    },
+    "Programa_Calculos_Aerodinamicos_V2.6.0_Colab.ipynb": {
+      "bytes": 92777,
+      "sha256": "ddf3232629ad783b002eeafc300fedbd115b3aa48936b810bba8f50b3dc128b6"
+    }
+  },
+  "logica_colab_library_igual": true,
+  "bancos": [
+    {
+      "arquivo": "Banco_de_Variaveis_Calculo_1.db",
+      "sha256": "9bb05ed7887d71950a0874c6d73ab70885f55e86e01b934c2eb8a2cfd906d59e",
+      "metadata": {
+        "programa": "Programa para cálculos Aerodinâmicos",
+        "versao_programa": "2.6.0",
+        "schema_version": "2",
+        "ultimo_acesso": "2026-10-02T17:09:17+00:00",
+        "status_migracao": "Sem migração necessária."
+      },
+      "contagens": {
+        "calculos": 6,
+        "dependencias_calculo": 30,
+        "execucao_valores": 4,
+        "execucoes": 1,
+        "metadata": 5,
+        "variaveis": 23,
+        "variaveis_legado": 0
+      },
+      "schema": {
+        "calculos": {
+          "table_info": [
+            [
+              0,
+              "id_calculo",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "nome",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "versao",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "formula",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "unidade_saida",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "descricao",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "ativo",
+              "INTEGER",
+              1,
+              "1",
+              0
+            ],
+            [
+              7,
+              "criado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              8,
+              "atualizado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [],
+          "index_list": [
+            [
+              0,
+              "sqlite_autoindex_calculos_2",
+              1,
+              "u",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_calculos_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "dependencias_calculo": {
+          "table_info": [
+            [
+              0,
+              "id_calculo",
+              "TEXT",
+              1,
+              null,
+              1
+            ],
+            [
+              1,
+              "id_variavel",
+              "TEXT",
+              1,
+              null,
+              2
+            ],
+            [
+              2,
+              "papel",
+              "TEXT",
+              1,
+              null,
+              3
+            ],
+            [
+              3,
+              "ordem",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ]
+          ],
+          "foreign_key_list": [
+            [
+              0,
+              0,
+              "variaveis",
+              "id_variavel",
+              "id_variavel",
+              "NO ACTION",
+              "RESTRICT",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "calculos",
+              "id_calculo",
+              "id_calculo",
+              "NO ACTION",
+              "CASCADE",
+              "NONE"
+            ]
+          ],
+          "index_list": [
+            [
+              0,
+              "idx_dependencias_calculo",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_dependencias_calculo_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "execucao_valores": {
+          "table_info": [
+            [
+              0,
+              "id_execucao",
+              "INTEGER",
+              1,
+              null,
+              1
+            ],
+            [
+              1,
+              "id_variavel",
+              "TEXT",
+              1,
+              null,
+              2
+            ],
+            [
+              2,
+              "papel",
+              "TEXT",
+              1,
+              null,
+              3
+            ],
+            [
+              3,
+              "valor_real",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "valor_texto",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "unidade_si",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [
+            [
+              0,
+              0,
+              "variaveis",
+              "id_variavel",
+              "id_variavel",
+              "NO ACTION",
+              "RESTRICT",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "execucoes",
+              "id_execucao",
+              "id_execucao",
+              "NO ACTION",
+              "CASCADE",
+              "NONE"
+            ]
+          ],
+          "index_list": [
+            [
+              0,
+              "sqlite_autoindex_execucao_valores_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "execucoes": {
+          "table_info": [
+            [
+              0,
+              "id_execucao",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "id_calculo",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "executado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "status",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "mensagem",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [
+            [
+              0,
+              0,
+              "calculos",
+              "id_calculo",
+              "id_calculo",
+              "NO ACTION",
+              "RESTRICT",
+              "NONE"
+            ]
+          ],
+          "index_list": [
+            [
+              0,
+              "idx_execucoes_calculo_data",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "metadata": {
+          "table_info": [
+            [
+              0,
+              "chave",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "valor",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [],
+          "index_list": [
+            [
+              0,
+              "sqlite_autoindex_metadata_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "variaveis": {
+          "table_info": [
+            [
+              0,
+              "id_variavel",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "nome",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "valor_real",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "valor_texto",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "unidade_si",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "unidade_codigo",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "tipo",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              7,
+              "categoria",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              8,
+              "eh_saida",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              9,
+              "descricao",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              10,
+              "atualizado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [],
+          "index_list": [
+            [
+              0,
+              "idx_variaveis_categoria",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "idx_variaveis_saida",
+              0,
+              "c",
+              0
+            ],
+            [
+              2,
+              "sqlite_autoindex_variaveis_2",
+              1,
+              "u",
+              0
+            ],
+            [
+              3,
+              "sqlite_autoindex_variaveis_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "variaveis_legado": {
+          "table_info": [
+            [
+              0,
+              "chave",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              1,
+              "valor",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "migrado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [],
+          "index_list": []
+        }
+      },
+      "integridade": "ok"
+    },
+    {
+      "arquivo": "123.db",
+      "sha256": "14638069a5d537a336ca2bc412f0122d506576ca77ded4ea5f2ede15ceea8266",
+      "metadata": {
+        "programa": "Programa para cálculos Aerodinâmicos",
+        "versao_programa": "2.6.0",
+        "schema_version": "2",
+        "ultimo_acesso": "2026-10-02T17:09:52+00:00",
+        "status_migracao": "Sem migração necessária."
+      },
+      "contagens": {
+        "calculos": 6,
+        "dependencias_calculo": 30,
+        "execucao_valores": 36,
+        "execucoes": 7,
+        "metadata": 5,
+        "variaveis": 23,
+        "variaveis_legado": 0
+      },
+      "schema": {
+        "calculos": {
+          "table_info": [
+            [
+              0,
+              "id_calculo",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "nome",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "versao",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "formula",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "unidade_saida",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "descricao",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              6,
+              "ativo",
+              "INTEGER",
+              1,
+              "1",
+              0
+            ],
+            [
+              7,
+              "criado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              8,
+              "atualizado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [],
+          "index_list": [
+            [
+              0,
+              "sqlite_autoindex_calculos_2",
+              1,
+              "u",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_calculos_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "dependencias_calculo": {
+          "table_info": [
+            [
+              0,
+              "id_calculo",
+              "TEXT",
+              1,
+              null,
+              1
+            ],
+            [
+              1,
+              "id_variavel",
+              "TEXT",
+              1,
+              null,
+              2
+            ],
+            [
+              2,
+              "papel",
+              "TEXT",
+              1,
+              null,
+              3
+            ],
+            [
+              3,
+              "ordem",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ]
+          ],
+          "foreign_key_list": [
+            [
+              0,
+              0,
+              "variaveis",
+              "id_variavel",
+              "id_variavel",
+              "NO ACTION",
+              "RESTRICT",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "calculos",
+              "id_calculo",
+              "id_calculo",
+              "NO ACTION",
+              "CASCADE",
+              "NONE"
+            ]
+          ],
+          "index_list": [
+            [
+              0,
+              "idx_dependencias_calculo",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "sqlite_autoindex_dependencias_calculo_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "execucao_valores": {
+          "table_info": [
+            [
+              0,
+              "id_execucao",
+              "INTEGER",
+              1,
+              null,
+              1
+            ],
+            [
+              1,
+              "id_variavel",
+              "TEXT",
+              1,
+              null,
+              2
+            ],
+            [
+              2,
+              "papel",
+              "TEXT",
+              1,
+              null,
+              3
+            ],
+            [
+              3,
+              "valor_real",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "valor_texto",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              5,
+              "unidade_si",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [
+            [
+              0,
+              0,
+              "variaveis",
+              "id_variavel",
+              "id_variavel",
+              "NO ACTION",
+              "RESTRICT",
+              "NONE"
+            ],
+            [
+              1,
+              0,
+              "execucoes",
+              "id_execucao",
+              "id_execucao",
+              "NO ACTION",
+              "CASCADE",
+              "NONE"
+            ]
+          ],
+          "index_list": [
+            [
+              0,
+              "sqlite_autoindex_execucao_valores_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "execucoes": {
+          "table_info": [
+            [
+              0,
+              "id_execucao",
+              "INTEGER",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "id_calculo",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "executado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              3,
+              "status",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              4,
+              "mensagem",
+              "TEXT",
+              0,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [
+            [
+              0,
+              0,
+              "calculos",
+              "id_calculo",
+              "id_calculo",
+              "NO ACTION",
+              "RESTRICT",
+              "NONE"
+            ]
+          ],
+          "index_list": [
+            [
+              0,
+              "idx_execucoes_calculo_data",
+              0,
+              "c",
+              0
+            ]
+          ]
+        },
+        "metadata": {
+          "table_info": [
+            [
+              0,
+              "chave",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "valor",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [],
+          "index_list": [
+            [
+              0,
+              "sqlite_autoindex_metadata_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "variaveis": {
+          "table_info": [
+            [
+              0,
+              "id_variavel",
+              "TEXT",
+              0,
+              null,
+              1
+            ],
+            [
+              1,
+              "nome",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              2,
+              "valor_real",
+              "REAL",
+              0,
+              null,
+              0
+            ],
+            [
+              3,
+              "valor_texto",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              4,
+              "unidade_si",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              5,
+              "unidade_codigo",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              6,
+              "tipo",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              7,
+              "categoria",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              8,
+              "eh_saida",
+              "INTEGER",
+              1,
+              "0",
+              0
+            ],
+            [
+              9,
+              "descricao",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              10,
+              "atualizado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [],
+          "index_list": [
+            [
+              0,
+              "idx_variaveis_categoria",
+              0,
+              "c",
+              0
+            ],
+            [
+              1,
+              "idx_variaveis_saida",
+              0,
+              "c",
+              0
+            ],
+            [
+              2,
+              "sqlite_autoindex_variaveis_2",
+              1,
+              "u",
+              0
+            ],
+            [
+              3,
+              "sqlite_autoindex_variaveis_1",
+              1,
+              "pk",
+              0
+            ]
+          ]
+        },
+        "variaveis_legado": {
+          "table_info": [
+            [
+              0,
+              "chave",
+              "TEXT",
+              1,
+              null,
+              0
+            ],
+            [
+              1,
+              "valor",
+              "TEXT",
+              0,
+              null,
+              0
+            ],
+            [
+              2,
+              "migrado_em",
+              "TEXT",
+              1,
+              null,
+              0
+            ]
+          ],
+          "foreign_key_list": [],
+          "index_list": []
+        }
+      },
+      "integridade": "ok"
+    }
+  ],
+  "diferencas": {
+    "variaveis": {
+      "iguais": false,
+      "linhas_principal": 23,
+      "linhas_123": 23
+    },
+    "calculos": {
+      "iguais": false,
+      "linhas_principal": 6,
+      "linhas_123": 6
+    },
+    "dependencias_calculo": {
+      "iguais": true,
+      "linhas_principal": 30,
+      "linhas_123": 30
+    },
+    "execucoes": {
+      "iguais": false,
+      "linhas_principal": 1,
+      "linhas_123": 7
+    },
+    "execucao_valores": {
+      "iguais": false,
+      "linhas_principal": 4,
+      "linhas_123": 36
+    },
+    "metadata": {
+      "iguais": false,
+      "linhas_principal": 5,
+      "linhas_123": 5
+    }
+  },
+  "historicos_recalculados": [
+    {
+      "banco": "Banco_de_Variaveis_Calculo_1.db",
+      "execucao": 1,
+      "calculo": "CAL_EMP",
+      "resultado_igual": true
+    },
+    {
+      "banco": "123.db",
+      "execucao": 1,
+      "calculo": "CAL_SUST",
+      "resultado_igual": true
+    },
+    {
+      "banco": "123.db",
+      "execucao": 2,
+      "calculo": "CAL_ARR",
+      "resultado_igual": true
+    },
+    {
+      "banco": "123.db",
+      "execucao": 3,
+      "calculo": "CAL_EMP",
+      "resultado_igual": true
+    },
+    {
+      "banco": "123.db",
+      "execucao": 4,
+      "calculo": "CAL_NEWTON",
+      "resultado_igual": true
+    },
+    {
+      "banco": "123.db",
+      "execucao": 5,
+      "calculo": "CAL_BER",
+      "resultado_igual": true
+    },
+    {
+      "banco": "123.db",
+      "execucao": 6,
+      "calculo": "CAL_BER",
+      "resultado_igual": true
+    },
+    {
+      "banco": "123.db",
+      "execucao": 7,
+      "calculo": "CAL_BREG",
+      "resultado_igual": true
+    }
+  ],
+  "principal": "Banco_de_Variaveis_Calculo_1.db"
+}
