@@ -1,0 +1,39 @@
+name: Testes Apolo Web
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APOLO_AUTH_MODE: local
+      APOLO_LOCAL_ROLE: operador
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements-dev.txt
+      - name: Confirmar checkout sem dados privados
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          assert not Path("originals").exists(), "originals nao deve ser versionado"
+          assert not list(Path("data").glob("*.db*")), "bancos reais nao devem ser versionados"
+          PY
+      - name: Executar suite portatil
+        run: python -m pytest tests -q

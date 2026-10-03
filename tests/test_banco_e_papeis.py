@@ -1,5 +1,5 @@
-import ast
 import hashlib
+import json
 from pathlib import Path
 import sqlite3
 import re
@@ -10,6 +10,14 @@ from core.catalogo import CATALOGO_CALCULOS
 from database.repository import RepositorioSQLite, inspecionar_arquivo
 from services.apolo import ServicoApolo
 from tools.importar_banco import importar
+
+
+RAIZ = Path(__file__).resolve().parents[1]
+FIXTURE_SCHEMA = RAIZ / "tests" / "fixtures" / "schema_apolo_26.json"
+
+
+with FIXTURE_SCHEMA.open("r", encoding="utf-8") as arquivo:
+    REFERENCIA_SCHEMA = json.load(arquivo)
 
 
 @pytest.fixture
@@ -28,19 +36,26 @@ def entradas_newton():
 
 
 def test_schema_idêntico_ao_original(repo):
-    source=Path(__file__).resolve().parents[1]/"originals"/"Apolo_2_6_exportado.py"
-    tree=ast.parse(source.read_text(encoding="utf-8"))
-    func=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=="criar_esquema_novo")
-    env={}
-    exec(compile(ast.Module(body=[func],type_ignores=[]),str(source),"exec"),env)
-    expected=sqlite3.connect(":memory:")
-    env[func.name](expected)
+    assert len(REFERENCIA_SCHEMA["objetos"]) == 11
+    assert REFERENCIA_SCHEMA["proveniencia"]["sha256"] == (
+        "b06d2d4e064fdafd8c2edae0130435175022da7c62dc2221ee881edb1ae949e7"
+    )
     query="SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name"
     def normalize(rows):
         return [(kind,name,table,re.sub(r"\s+"," ",sql).strip()) for kind,name,table,sql in rows]
+
+    expected = [
+        (
+            objeto["tipo"],
+            objeto["nome"],
+            objeto["tabela"],
+            objeto["sql"],
+        )
+        for objeto in REFERENCIA_SCHEMA["objetos"]
+    ]
+
     with repo.conectar() as conn:
-        assert normalize(conn.execute(query))==normalize(expected.execute(query))
-    expected.close()
+        assert normalize(conn.execute(query)) == expected
 
 
 def test_snapshot_e_valores_persistidos(repo):

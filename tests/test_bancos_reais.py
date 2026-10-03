@@ -11,7 +11,23 @@ from services.apolo import ServicoApolo
 ORIGINALS=Path(__file__).resolve().parents[1]/"originals"
 
 
-@pytest.mark.parametrize("filename,execucoes",[("Banco_de_Variaveis_Calculo_1.db",1),("123.db",7)])
+@pytest.mark.parametrize(
+    "filename,execucoes",
+    [
+        pytest.param(
+            filename,
+            execucoes,
+            marks=pytest.mark.skipif(
+                not (ORIGINALS / filename).is_file(),
+                reason=f"Banco histórico local ausente: {filename}.",
+            ),
+        )
+        for filename, execucoes in [
+            ("Banco_de_Variaveis_Calculo_1.db", 1),
+            ("123.db", 7),
+        ]
+    ],
+)
 def test_historico_real_e_importacao_preservados(filename,execucoes,tmp_path):
     source=ORIGINALS/filename
     before=hashlib.sha256(source.read_bytes()).hexdigest()

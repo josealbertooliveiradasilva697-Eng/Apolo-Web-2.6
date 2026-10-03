@@ -105,7 +105,14 @@ O importador valida schema, catálogo, integridade e relações, usa uma cópia 
 
 ## Verificação
 
-Resultado final: **639 testes passaram**, sem falhas, em Python 3.12 e Streamlit 1.64.0. O relatório está em `test-results.xml`; os detalhes da auditoria estão em `AUDITORIA.md` e `auditoria.json`.
+Marco de portabilidade (03/10/2026): **640 testes passaram** no clone local e
+**637 passaram, 3 foram pulados** em uma cópia sem `originals/` e `data/`.
+Os mesmos testes usaram uma fixture temporária de diagnóstico com permissões
+herdadas, pois o pytest padrão não consegue usar temporários privados no sandbox
+desta sessão. A execução padrão fora do sandbox e o GitHub Actions estão pendentes.
+`test-results.xml`, `AUDITORIA.md` e `auditoria.json` são registros anteriores;
+não foram regenerados como evidência deste marco. Os detalhes atuais estão em
+`MANUAL_TECNICO_APOLO_WEB_IMPLEMENTADO.md` e `CHANGELOG_IMPLEMENTACAO.md`.
 
 Para rodar em um ambiente Python instalado normalmente:
 
@@ -114,7 +121,14 @@ Para rodar em um ambiente Python instalado normalmente:
 & '.\.venv\Scripts\python.exe' -m pytest tests -q
 ```
 
-Os testes criam bancos temporários; não gravam nos bancos em `originals/`. A suíte contém 600 comparações numéricas com os callbacks originais, seis exemplos de referência, comparação do schema, reexecução dos oito históricos recebidos e testes de interface/permissões/transações.
+Os testes criam bancos temporários; não gravam nos bancos em `originals/`.
+A suíte contém 600 comparações exatas contra resultados auditados dos callbacks
+originais nas fixtures JSON, seis exemplos independentes, cinco restrições de
+Breguet, NaN/inf/overflow e comparação com o snapshot JSON do schema.
+As auditorias de notebook e dos oito históricos recebidos continuam completas
+quando os arquivos locais existem; sem eles, apenas essas três auditorias são
+puladas. Testes de interface, permissões e transações sempre são executados.
+Não é necessário executar o gerador das fixtures para rodar a suíte.
 
 O valor de Breguet permanece em metros, com velocidade em m/s e consumo específico em s⁻¹. Não foi acrescentada conversão automática. Os modelos físicos originais não foram ampliados; esta migração não constitui validação para decisões de segurança aeronáutica.
 
