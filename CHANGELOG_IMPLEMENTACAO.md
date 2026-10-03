@@ -31,7 +31,20 @@ interface/telas.py e tests/test_contrato_persistencia.py.
 Contrato inclui somente operações usadas e uma identidade de contexto.
 SQLite mantém schema e transações. Diagnósticos passaram pelo serviço autorizado.
 Dois testes verificam execução sem arquivo e autorização fora da tela.
-Suíte/commit serão registrados depois da verificação do bloco.
+Suíte diagnóstica: **639 passed, 3 skipped**. Commit: **40d863c**.
+
+## 03/10/2026 — Etapas 4 e 6: persistência Supabase e RLS
+
+Branch: feature/supabase-database.
+Criados: config.py, integrations/supabase_http.py, database/supabase_repository.py,
+services/projects.py, três migrations SQL, tests/test_supabase_repository.py
+e tests/test_postgres_integracao.py.
+Alterados: .env.example e requirements-dev.txt (psycopg só para testes reais).
+Motivo: persistência com JWT individual, projetos privados e RPC atômico;
+cadastros sempre operadores; nenhuma escrita direta em perfis/valores/histórico.
+Teste de contrato REST: suíte diagnóstica **652 passed, 3 skipped**, antes de
+acrescentar os oito testes PostgreSQL opcionais.
+PostgreSQL/Auth real ainda não configurados. SQL/RLS precisam de execução real.
 
 | Etapa | Arquivos | Motivo | Testes |
 | --- | --- | --- | --- |
