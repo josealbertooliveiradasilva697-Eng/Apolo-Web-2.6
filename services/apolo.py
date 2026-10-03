@@ -1,10 +1,11 @@
-from auth.roles import Acao, exigir
+from auth.roles import Acao, Identidade, exigir
 from core.calculos import calcular
 from core.catalogo import CATALOGO_CALCULOS
+from database.contracts import RepositorioCalculos
 
 
 class ServicoApolo:
-    def __init__(self, repo, usuario):
+    def __init__(self, repo: RepositorioCalculos, usuario: Identidade):
         self.repo, self.usuario = repo, usuario
 
     def consultar(self):
@@ -33,3 +34,7 @@ class ServicoApolo:
     def detalhe(self, id_execucao):
         exigir(self.usuario, Acao.CONSULTAR)
         return self.repo.detalhe(id_execucao)
+
+    def diagnosticar(self):
+        exigir(self.usuario, Acao.DIAGNOSTICAR)
+        return self.repo.diagnostico()

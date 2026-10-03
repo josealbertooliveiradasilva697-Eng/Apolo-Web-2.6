@@ -20,7 +20,18 @@ Arquivos: iniciar.ps1, .gitignore, README.md e documentação.
 Motivo: retirar caminhos de sessão Codex e instruções dependentes de bancos
 específicos; proteger arquivos .env alternativos e dados locais.
 Dependências mantidas em suas versões verificadas; nenhum dado real copiado.
-Testes/commit serão registrados após a verificação deste bloco.
+Verificação diagnóstica da suíte: **637 passed, 3 skipped**.
+Commit correspondente: **49f602f**.
+
+## 03/10/2026 — Etapa 3: contrato de persistência
+
+Branch: feature/supabase-database, a partir de develop.
+Arquivos: database/contracts.py, database/repository.py, services/apolo.py,
+interface/telas.py e tests/test_contrato_persistencia.py.
+Contrato inclui somente operações usadas e uma identidade de contexto.
+SQLite mantém schema e transações. Diagnósticos passaram pelo serviço autorizado.
+Dois testes verificam execução sem arquivo e autorização fora da tela.
+Suíte/commit serão registrados depois da verificação do bloco.
 
 | Etapa | Arquivos | Motivo | Testes |
 | --- | --- | --- | --- |

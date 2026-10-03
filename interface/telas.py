@@ -13,7 +13,7 @@ def calculos(servico):
     meta = CATALOGO_CALCULOS[id_calculo]
     st.caption(meta["formula"])
     valores = {r["nome"]:r["valor_real"] if r["tipo"]=="REAL" else r["valor_texto"] for r in servico.consultar()}
-    with st.form(f"calculo_{servico.repo.path.name}_{id_calculo}"):
+    with st.form(f"calculo_{servico.repo.contexto}_{id_calculo}"):
         entradas = {}
         for nome in meta["entradas"]:
             variavel = CATALOGO_VARIAVEIS[nome]
@@ -23,21 +23,21 @@ def calculos(servico):
                 f"{nome} ({variavel['unidade_si']})", value=float(valor),
                 format="%.10g", disabled=nome=="gravidade",
                 help=variavel["descricao"],
-                key=f"entrada:{servico.repo.path.name}:{id_calculo}:{variavel['id_variavel']}",
+                key=f"entrada:{servico.repo.contexto}:{id_calculo}:{variavel['id_variavel']}",
             )
         enviar = st.form_submit_button("Calcular e salvar", type="primary")
     if enviar:
         try:
             resultado = servico.executar(id_calculo, entradas)
             st.session_state["ultimo_resultado"] = resultado
-            st.session_state["banco_resultado"] = str(servico.repo.path)
+            st.session_state["banco_resultado"] = servico.repo.contexto
         except (ValueError, PermissionError) as exc:
             st.session_state.pop("ultimo_resultado",None)
             st.error(str(exc))
         else:
             st.success(f"Cálculo salvo. Execução {resultado['id_execucao']}.")
     resultado = st.session_state.get("ultimo_resultado")
-    if resultado and resultado["id_calculo"]==id_calculo and st.session_state.get("banco_resultado")==str(servico.repo.path):
+    if resultado and resultado["id_calculo"]==id_calculo and st.session_state.get("banco_resultado")==servico.repo.contexto:
         for nome,valor in resultado["saidas"].items():
             st.metric(nome, f"{valor:.10g} {CATALOGO_VARIAVEIS[nome]['unidade_si']}")
         st.download_button("Baixar resultado (JSON)",json.dumps(resultado,ensure_ascii=False,indent=2),file_name=f"apolo_execucao_{resultado['id_execucao']}.json",mime="application/json")
@@ -88,7 +88,7 @@ def administracao(servico):
     linhas=[r for r in servico.consultar() if not r["eh_saida"]]
     nome=st.selectbox("Variável",[r["nome"] for r in linhas])
     row=next(r for r in linhas if r["nome"]==nome)
-    with st.form(f"config_{servico.repo.path.name}_{row['id_variavel']}"):
+    with st.form(f"config_{servico.repo.contexto}_{row['id_variavel']}"):
         if row["tipo"]=="REAL":
             valor=st.number_input(f"Valor ({row['unidade_si']})",value=float(row["valor_real"] or 0),format="%.10g")
         else:
@@ -113,4 +113,4 @@ def diagnosticos(servico):
     if not permitido(servico.usuario, Acao.DIAGNOSTICAR):
         st.error("Seu perfil não permite esta operação.")
         return
-    st.json(inspecionar_arquivo(servico.repo.path))
+    st.json(servico.diagnosticar())

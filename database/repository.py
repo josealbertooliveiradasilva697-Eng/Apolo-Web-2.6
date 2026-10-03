@@ -78,6 +78,13 @@ def inspecionar_arquivo(path: Path):
 
 
 class RepositorioSQLite:
+    @property
+    def contexto(self):
+        return f"sqlite:{self.path}"
+
+    def diagnostico(self):
+        return inspecionar_arquivo(self.path)
+
     def __init__(self, data_dir: Path, nome: str = "Apolo_teste.db"):
         if not re.fullmatch(r"[A-Za-z0-9_-]+\.db", nome):
             raise ValueError("Nome do banco inválido.")
