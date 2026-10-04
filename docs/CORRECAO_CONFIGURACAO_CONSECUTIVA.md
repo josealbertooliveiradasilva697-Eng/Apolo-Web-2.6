@@ -1,5 +1,12 @@
 # Correção do segundo envio de configuração
 
+Atualização posterior: 2486215 publicado pelo usuário; pytest padrão 691/8/0,
+21,38 s; Actions 37165709281 aprovado com 696/3/0, 8,55 s. Render publicado
+no mesmo SHA, deploy dep-db0q69k9v7es73ciivp0 Live em 1 min 3 s.
+Revalidação autenticada do formulário ainda pendente; consultar
+VALIDACAO_PRODUCAO_CORRECAO.md. Os estados “não publicado” abaixo descrevem
+o momento de preparação do commit de correção, não o estado atual.
+
 ## Problema observado
 
 Em produção f669ce2, ADMIN salvou um texto no projeto E2E A. No segundo envio,

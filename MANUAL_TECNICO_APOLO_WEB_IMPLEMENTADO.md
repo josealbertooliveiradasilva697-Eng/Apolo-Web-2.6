@@ -1,5 +1,20 @@
 # Manual técnico do Apolo Web implementado
 
+Estado mais recente — 03/10/2026: correção 2486215 importada/publicada pelo usuário.
+Pytest padrão **691 passed, 8 skipped**; Actions 37165709281 **696 passed,
+3 skipped**, incluindo PostgreSQL real. Novo deploy Render Free aprovado em
+1 min 3 s: dep-db0q69k9v7es73ciivp0, Source 2486215. Tela de login e consulta
+OPERADOR / texto original / seis execuções conferidas após o deploy.
+Veja docs/VALIDACAO_PRODUCAO_CORRECAO.md. Dois envios consecutivos na UI real
+foram confirmados por SQL; texto e OPERADOR restaurados. Reinício separado
+aprovado pelo Render; SQL e novo login/histórico confirmaram seis execuções,
+30 snapshots e resultados equivalentes. Faltam API negativa com JWTs e refresh
+real. Verificador interativo entregue fora do runtime, em outputs; não exige
+senhas no chat. Sua aprovação simulada não substitui execução real.
+O Render continua configurado na branch feature/render-deploy, mas foi publicado
+por SHA específico; Deploy latest commit dessa branch ainda pode retornar f669ce2.
+As notas abaixo são históricas, não o estado atual da publicação.
+
 Continuação autenticada: segunda conta conferida, isolamento real por SQL/RLS e
 telas ADMIN/DESENVOLVEDOR aprovados. A única conta promovida temporariamente
 voltou a OPERADOR, com remoção das páginas privilegiadas no rerun. Projeto A:
@@ -34,8 +49,8 @@ validados; isolamento entre usuários via API ainda exige segunda conta.
 Atualizado em 03/10/2026. Código preparado até PostgreSQL/Auth/RLS/UI/CI/Render.
 **A validação de produção ainda não está concluída:** CI anterior e instalação SQL
 passaram; OPERADOR, ADMIN, DESENVOLVEDOR e isolamento SQL entre contas aprovados.
-Faltam publicar/revalidar a correção de formulário, ataque negativo pela API,
-refresh real e persistência após restart/redeploy.
+A correção já foi publicada com nova CI e formulário real aprovados. Faltam
+ataque negativo pela API e refresh real. Histórico após reinício aprovado.
 
 Este manual explica o que mudou e por quê. Não confunde um teste com API simulada
 com um teste no serviço real. As fórmulas e o schema SQLite não foram alterados.
@@ -136,6 +151,7 @@ RLS responde “quais linhas desse banco pode acessar?”. São camadas compleme
       supabase/verificacoes/20261003_e2e.sql / 20261003_operador.sql
       docs/VALIDACAO_PAPEIS_ISOLAMENTO.md
       docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md
+      docs/VALIDACAO_PRODUCAO_CORRECAO.md
       supabase/verificacoes/20261003_perfis_precheck.sql
       supabase/verificacoes/20261003_papeis_isolamento.sql / 20261003_estado_ui.sql
       tools/
@@ -422,6 +438,13 @@ Free; endereço https://apolo-web-z74k.onrender.com/. O formulário foi preenchi
 diretamente no painel com os mesmos comandos/variáveis do template, não por
 importação automática do Blueprint. Deploy f669ce2 aprovado em 1 min 2 s;
 auto-deploy off, sem serviço de banco/disco Render. A tela de login foi aberta.
+Depois, deploy por SHA 2486215 aprovado em 1 min 3 s, com histórico preservado
+e dois salvamentos consecutivos conferidos. Reinício separado aprovado; SQL
+confirmou seis execuções. Auto-deploy off e branch configurada continuam iguais.
+Novo login abriu histórico com os mesmos seis IDs após reinício; auditoria SQL
+confirmou 30 snapshots e saídas equivalentes novamente.
+Até integrar/publicar a branch configurada, escolher Deploy a specific commit:
+Deploy latest commit de feature/render-deploy ainda pode voltar a f669ce2.
 
 Build: python -m pip install -r requirements.txt
 Start: python -m tools.iniciar_online
@@ -454,6 +477,8 @@ O job tem apenas contents: read. PostgreSQL deve estar saudável antes dos teste
 O usuário publicou pelo terminal normal; a CI remota 37156911993 foi conferida
 no navegador: **688 passed, 3 skipped, 0 failed em 6,22 s** para f669ce2.
 Os oito testes PostgreSQL foram executados. Os três skips são históricos.
+CI nova 37165709281 para 2486215: **696 passed, 3 skipped, 0 failed em 8,55 s**,
+incluindo as oito regressões novas de UI. Não é somente reaproveitamento da CI antiga.
 O Git HTTPS do sandbox continua limitado por credenciais/certificados;
 verificação TLS permaneceu habilitada. Isso não impediu o push pelo usuário.
 Referência: [PostgreSQL em Actions](https://docs.github.com/en/actions/tutorials/use-containerized-services/create-postgresql-service-containers).
@@ -491,7 +516,8 @@ Referência: [PostgreSQL em Actions](https://docs.github.com/en/actions/tutorial
 | supabase/verificacoes/20261003_perfis_precheck.sql | Confere perfis antes do teste; não lê credenciais |
 | supabase/verificacoes/20261003_papeis_isolamento.sql | Assertions reais de privilégios/isolamento com rollback |
 | supabase/verificacoes/20261003_estado_ui.sql | Consulta independente de papel, texto e execuções após UI |
-| docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md | Causa, correção mínima, prova de regressão e publicação pendente |
+| docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md | Causa, correção mínima e prova de regressão |
+| docs/VALIDACAO_PRODUCAO_CORRECAO.md | Nova CI/deploy, dois envios reais, restauração e persistência |
 
 O gerador e as fixtures haviam sido criados pelo usuário antes do commit 663bd2c;
 “criado” nesta tabela significa novo em Git em relação à baseline.
@@ -555,7 +581,9 @@ não apaga tabelas para se acomodar a um banco existente.
 | f669ce2, terminal usuário com ativos | 683 | 8 | 0 | pytest padrão, 16,70 s |
 | f669ce2, cópia portátil usuário | 680 | 11 | 0 | pytest padrão, 22,11 s |
 | f669ce2, GitHub Actions PostgreSQL 16 | 688 | 3 | 0 | CI real, 6,22 s |
-| Correção de configuração, clone isolado | 688 | 11 | 0 | Runner diagnóstico portátil, 18,93 s; não publicada |
+| Correção de configuração, clone isolado | 688 | 11 | 0 | Runner diagnóstico portátil, 18,93 s, anterior à publicação |
+| 2486215, terminal usuário com ativos | 691 | 8 | 0 | pytest padrão, 21,38 s |
+| 2486215, GitHub Actions PostgreSQL 16 | 696 | 3 | 0 | CI real 37165709281, 8,55 s |
 
 O sandbox não consegue usar certos temporários criados pelo pytest/Python:
 a tentativa padrão anterior produziu erros de setup. O runner auxiliar, fora
@@ -573,8 +601,10 @@ histórico, separação A/B, recusa Breguet e login negativo numa conta real.
 Depois, segunda conta e telas ADMIN/DESENVOLVEDOR foram conferidas; isolamento
 de duas pessoas foi aprovado com SQL controlado no Supabase. Perfil e texto
 temporários restaurados, sem alteração das seis execuções. Não é teste HTTP
-negativo com JWTs distintos. A correção do formulário ainda exige pytest padrão,
-CI própria e revalidação após publicação; refresh/restart/redeploy seguem pendentes.
+negativo com JWTs distintos. A correção passou no pytest padrão, na nova CI e
+em dois salvamentos consecutivos no app real, cada um conferido no SQL.
+O redeploy conservou o histórico e o reinício separado foi aprovado; leitura
+autenticada após reinício também passou. Refresh/API negativa seguem pendentes.
 
 ## 23. Como rodar localmente
 
@@ -633,19 +663,20 @@ Confira startup e health; abra o app HTTPS e execute:
 | --- | --- | --- |
 | Login correto/incorreto e logout | Identidade real; recusa segura; estado limpo | Aprovado no Render/Supabase |
 | Expiração/refresh e conta sem profile | Renovação ou novo login; falha fechada | Pendente |
-| Operador, admin e desenvolvedor | Matriz de papel na UI, serviço e banco | Pendente |
+| Operador, admin e desenvolvedor | Matriz de papel na UI, serviço e banco | Aprovado real; privilégios temporários retirados |
 | Criar/selecionar dois projetos | Defaults e históricos separados | Aprovado A/B do mesmo proprietário |
 | Os seis cálculos e histórico | Referências e snapshots equivalentes | Aprovado real: seis execuções, 30 valores |
 | Dois usuários tentam acesso cruzado | SELECT vazio e RPC negada | PostgreSQL CI aprovado; PostgREST real pendente |
 | Alterar papel/defaults direto pela API | Negado ao cliente | PostgreSQL CI aprovado; API real pendente |
-| Reiniciar serviço | Dados conservados; novo login se necessário | Pendente |
-| Novo deploy | Mesmo histórico no Supabase, sem SQLite Render | Pendente |
-| CI com 600 snapshots | Persistência exata em PostgreSQL | Aprovado: 688 passed, 3 skipped |
+| Reiniciar serviço | Dados conservados; novo login se necessário | Aprovado: Render, SQL e leitura autenticada do histórico |
+| Novo deploy | Mesmo histórico no Supabase, sem SQLite Render | Aprovado: 2486215 e histórico real do projeto A |
+| CI com 600 snapshots | Persistência exata em PostgreSQL | Aprovado: 696 passed, 3 skipped |
 | Instalação/health/tela de login | Produção sem SQLite; serviço disponível | Aprovado no Render |
 
 Registre data, commit, evidência e resultado de cada item, sem tokens/senhas.
 Só então integre a versão validada em develop remoto e, após aprovação, main.
-Nenhum merge em main ou deploy externo foi feito por este pacote.
+Nenhum merge em main foi feito. Os dois deploys externos estão registrados;
+a validação integral ainda depende das pendências indicadas.
 
 ## 27. Como diagnosticar erros
 
@@ -667,8 +698,10 @@ Diagnóstico da interface só traz informações do contexto autorizado, não se
 
 ## 28. Limitações e riscos remanescentes
 
-SQL/RLS preparados mas ainda não executados em PostgreSQL real.
-CI/deploy não publicados; Supabase Auth/PostgREST e reinícios ainda não validados.
+SQL/RLS executados em PostgreSQL real e Supabase; CI e dois deploys aprovados.
+Auth/PostgREST reais usados nos seis cálculos, histórico e configuração.
+Pendente API negativa com JWTs e refresh real; leitura após reinício aprovada.
+Formulário corrigido validado em produção; SQL com claims não é teste HTTP.
 Sessão não persistente entre novas conexões; logout segue validade natural do JWT.
 Sem recuperação de senha/cadastro público, compartilhamento, gestão global de usuários,
 importação SQLite->online, paginação além das últimas 200 execuções e soft-delete.
@@ -737,6 +770,6 @@ e substituir o banco sem reescrever a interface ou regra.
 | Mock/AppTest | Resposta controlada/teste programático da interface |
 | Teste de fumaça | Verificação básica de startup, não validação integral |
 
-Consulte CHANGELOG_IMPLEMENTACAO.md para a relação etapa/commit e o relatório
-entregue para o estado de bloqueio externo. Este manual deve receber as evidências
-reais na próxima execução; seu título não significa deploy concluído.
+Consulte CHANGELOG_IMPLEMENTACAO.md e docs/VALIDACAO_PRODUCAO_CORRECAO.md para
+etapas, evidências e pendências atuais. O título não significa validação integral
+de produção concluída; os registros anteriores identificam suas limitações.

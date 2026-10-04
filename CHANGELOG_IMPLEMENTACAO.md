@@ -1,5 +1,31 @@
 # Changelog da implementação Apolo Web
 
+## CI e publicação da correção — continuação da etapa 10
+
+Feature/production-validation criada de develop isolado integrado até 2486215.
+Usuário importou/publicou feature/config-form-state e confirmou pytest padrão:
+691 passed, 8 skipped, 0 failed, 21,38 s. Backup pre-correcao-config preservado.
+CI 37165709281 para 2486215: 696 passed, 3 skipped, 0 failed, 8,55 s, com oito
+testes PostgreSQL reais. Render publicado por SHA específico, sem mudar branch:
+dep-db0q69k9v7es73ciivp0, Live, 1 min 3 s. Login público conferido; SQL confirmou
+OPERADOR / texto original / seis execuções após deploy. Sem reaplicar migrations.
+Com nova autorização explícita, reteste temporário DESENVOLVEDOR gravou primeiro
+e segundo texto sem sair da tela; SQL confirmou cada um e a restauração original.
+Papel voltou a OPERADOR, confirmado em SQL/UI; páginas elevadas removidas.
+Histórico autenticado preservado após deploy. Restart service aprovado no Render;
+SQL após restart confirmou OPERADOR / texto original / seis execuções.
+Novo login/histórico após restart aprovados: mesmos seis IDs; SQL confirmou
+seis resultados equivalentes, 30 snapshots e três profiles OPERADOR.
+Refresh/API negativa ainda pendentes; entregue verificador fora do runtime,
+com oito controles simulados aprovados, sem credenciais embutidas.
+Criado: docs/VALIDACAO_PRODUCAO_CORRECAO.md. Alterados: manual/changelog e
+docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md. Motivo: registrar evidência atual,
+não confundir testes simulados, SQL com claims e testes HTTP reais.
+Sem runtime novo; git diff --check. Resultado pytest/CI do código 2486215.
+Commit documental: assunto “docs: registrar CI e deploy da correcao administrativa”;
+hash no relatório. Original main/develop e dados preservados.
+Notas anteriores são históricas; importação/CI/deploy novos já foram concluídos.
+
 ## Correção descoberta na validação real — formulário administrativo
 
 Branch feature/config-form-state, criada de develop isolado após fast-forward
