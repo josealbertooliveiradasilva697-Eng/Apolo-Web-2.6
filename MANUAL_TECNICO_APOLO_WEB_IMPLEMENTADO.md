@@ -1,5 +1,14 @@
 # Manual técnico do Apolo Web implementado
 
+Continuação autenticada: segunda conta conferida, isolamento real por SQL/RLS e
+telas ADMIN/DESENVOLVEDOR aprovados. A única conta promovida temporariamente
+voltou a OPERADOR, com remoção das páginas privilegiadas no rerun. Projeto A:
+status_projeto original restaurado e seis execuções preservadas.
+Veja docs/VALIDACAO_PAPEIS_ISOLAMENTO.md. Identificado defeito em dois salvamentos
+consecutivos de configuração, reproduzido por quatro regressões. Correção,
+publicação, API negativa, refresh e restart/redeploy pendentes.
+Os parágrafos seguintes registram a sequência histórica das validações.
+
 Validação real posterior: login OPERADOR, seis cálculos persistidos, 30 snapshots,
 separação de dois projetos, histórico, banco de variáveis, Breguet inválido,
 logout e login negativo aprovados. SQL no Supabase negou configuração/diagnóstico

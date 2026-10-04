@@ -1,5 +1,23 @@
 # Changelog da implementação Apolo Web
 
+## Papéis reais e isolamento — continuação da etapa 10
+
+Branch feature/online-validation; runtime publicado permanece f669ce2.
+Segunda conta conectada apresentou só o próprio projeto. Três profiles conferidos.
+Com autorização explícita, apenas a conta indicada foi temporariamente ADMIN,
+depois DESENVOLVEDOR, e voltou a OPERADOR. Administração gravou pelo app;
+diagnóstico retornou seis execuções e 23 variáveis. Rerun retirou acessos elevados.
+SQL real confirmou acesso próprio e negou acesso cruzado/falsificação de dono.
+Claims SQL controlados + rollback NÃO equivalem a ataque HTTP com JWTs reais.
+Estado final: OPERADOR / Conectado com sucesso / seis execuções em A.
+Criados: docs/VALIDACAO_PAPEIS_ISOLAMENTO.md e três consultas SQL de verificações
+(perfis_precheck, papeis_isolamento, estado_ui). Alterados: manual/changelog.
+Encontrado defeito de segundo envio de configuração, reproduzido em quatro testes
+novos: 4 failed, 691 deselected antes de corrigir. Esses testes são transportados
+para a feature de correção, não incluídos no commit documental deste registro.
+Commit de evidência: assunto “docs: validar papeis reais e isolamento entre contas”.
+Hash no relatório externo. Sem migration nova ou mudança no core.
+
 ## Validação real do operador — continuação da etapa 10
 
 Branch: feature/online-validation; código publicado permanece f669ce2.
