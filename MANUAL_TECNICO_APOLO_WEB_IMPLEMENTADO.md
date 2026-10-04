@@ -8,9 +8,14 @@ OPERADOR / texto original / seis execuções conferidas após o deploy.
 Veja docs/VALIDACAO_PRODUCAO_CORRECAO.md. Dois envios consecutivos na UI real
 foram confirmados por SQL; texto e OPERADOR restaurados. Reinício separado
 aprovado pelo Render; SQL e novo login/histórico confirmaram seis execuções,
-30 snapshots e resultados equivalentes. Faltam API negativa com JWTs e refresh
-real. Verificador interativo entregue fora do runtime, em outputs; não exige
-senhas no chat. Sua aprovação simulada não substitui execução real.
+30 snapshots e resultados equivalentes. Agora o usuário executou o verificador
+real: duas contas OPERADOR renovaram sessão; dados alheios em cinco tabelas
+ficaram invisíveis nas duas direções; RPCs alheias e diagnóstico próprio deram
+403. Duas sessões de teste encerradas por logout local, sem alteração de dados.
+Veja docs/VALIDACAO_API_SESSAO.md. Não aguardamos expiração natural do JWT;
+o refresh real foi acionado pelo relógio do cliente. Não houve JWT ADMIN cruzado.
+O fluxo funcional do piloto está aprovado; consolidação Git/CI do novo tip
+documental ainda pendente. Não equivale a prontidão operacional/certificação.
 O Render continua configurado na branch feature/render-deploy, mas foi publicado
 por SHA específico; Deploy latest commit dessa branch ainda pode retornar f669ce2.
 As notas abaixo são históricas, não o estado atual da publicação.
@@ -47,10 +52,12 @@ conferida em https://apolo-web-z74k.onrender.com/. Login/cálculos reais foram
 validados; isolamento entre usuários via API ainda exige segunda conta.
 
 Atualizado em 03/10/2026. Código preparado até PostgreSQL/Auth/RLS/UI/CI/Render.
-**A validação de produção ainda não está concluída:** CI anterior e instalação SQL
-passaram; OPERADOR, ADMIN, DESENVOLVEDOR e isolamento SQL entre contas aprovados.
-A correção já foi publicada com nova CI e formulário real aprovados. Faltam
-ataque negativo pela API e refresh real. Histórico após reinício aprovado.
+**Fluxos funcionais reais aprovados, consolidação final ainda pendente.** CI,
+SQL/RLS, papéis, cálculos, formulário corrigido, API negativa com dois JWTs,
+refresh real e histórico após restart/redeploy têm evidências. Falta importar/
+publicar os registros e integrar as branches, conferindo a CI do novo tip.
+Main permanece estável. Expiração natural real e preparo operacional têm limites
+explicitados, não são apresentados como validações feitas.
 
 Este manual explica o que mudou e por quê. Não confunde um teste com API simulada
 com um teste no serviço real. As fórmulas e o schema SQLite não foram alterados.
@@ -152,6 +159,7 @@ RLS responde “quais linhas desse banco pode acessar?”. São camadas compleme
       docs/VALIDACAO_PAPEIS_ISOLAMENTO.md
       docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md
       docs/VALIDACAO_PRODUCAO_CORRECAO.md
+      docs/VALIDACAO_API_SESSAO.md
       supabase/verificacoes/20261003_perfis_precheck.sql
       supabase/verificacoes/20261003_papeis_isolamento.sql / 20261003_estado_ui.sql
       tools/
@@ -518,6 +526,7 @@ Referência: [PostgreSQL em Actions](https://docs.github.com/en/actions/tutorial
 | supabase/verificacoes/20261003_estado_ui.sql | Consulta independente de papel, texto e execuções após UI |
 | docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md | Causa, correção mínima e prova de regressão |
 | docs/VALIDACAO_PRODUCAO_CORRECAO.md | Nova CI/deploy, dois envios reais, restauração e persistência |
+| docs/VALIDACAO_API_SESSAO.md | Dois JWTs reais, leitura própria/cruzada, 403 e renovação |
 
 O gerador e as fixtures haviam sido criados pelo usuário antes do commit 663bd2c;
 “criado” nesta tabela significa novo em Git em relação à baseline.
@@ -604,7 +613,10 @@ temporários restaurados, sem alteração das seis execuções. Não é teste HT
 negativo com JWTs distintos. A correção passou no pytest padrão, na nova CI e
 em dois salvamentos consecutivos no app real, cada um conferido no SQL.
 O redeploy conservou o histórico e o reinício separado foi aprovado; leitura
-autenticada após reinício também passou. Refresh/API negativa seguem pendentes.
+autenticada após reinício também passou. Usuário executou depois verificador:
+refresh real e leitura cruzada negativa em cinco tabelas passaram com dois JWTs,
+nas duas direções; RPCs cruzadas e diagnóstico OPERADOR deram 403; logout local
+confirmado. Não aguardamos expiração natural do JWT. Registro API_SESSAO acima.
 
 ## 23. Como rodar localmente
 
@@ -662,12 +674,12 @@ Confira startup e health; abra o app HTTPS e execute:
 | Verificação real | Resultado esperado | Estado neste pacote |
 | --- | --- | --- |
 | Login correto/incorreto e logout | Identidade real; recusa segura; estado limpo | Aprovado no Render/Supabase |
-| Expiração/refresh e conta sem profile | Renovação ou novo login; falha fechada | Pendente |
+| Renovação e sessão inválida | Renovação ou novo login; falha fechada | Refresh real aprovado em duas contas; expiração natural não aguardada; falhas/profile cobertos nos testes |
 | Operador, admin e desenvolvedor | Matriz de papel na UI, serviço e banco | Aprovado real; privilégios temporários retirados |
 | Criar/selecionar dois projetos | Defaults e históricos separados | Aprovado A/B do mesmo proprietário |
 | Os seis cálculos e histórico | Referências e snapshots equivalentes | Aprovado real: seis execuções, 30 valores |
-| Dois usuários tentam acesso cruzado | SELECT vazio e RPC negada | PostgreSQL CI aprovado; PostgREST real pendente |
-| Alterar papel/defaults direto pela API | Negado ao cliente | PostgreSQL CI aprovado; API real pendente |
+| Dois usuários tentam acesso cruzado | SELECT vazio e RPC negada | PostgREST real aprovado, dois JWTs OPERADOR nas duas direções |
+| Alterar papel/defaults direto pela API | Negado ao cliente | Grants verificados na CI/SQL; PATCH HTTP não executado; configuração própria pela UI aprovada |
 | Reiniciar serviço | Dados conservados; novo login se necessário | Aprovado: Render, SQL e leitura autenticada do histórico |
 | Novo deploy | Mesmo histórico no Supabase, sem SQLite Render | Aprovado: 2486215 e histórico real do projeto A |
 | CI com 600 snapshots | Persistência exata em PostgreSQL | Aprovado: 696 passed, 3 skipped |
@@ -676,7 +688,7 @@ Confira startup e health; abra o app HTTPS e execute:
 Registre data, commit, evidência e resultado de cada item, sem tokens/senhas.
 Só então integre a versão validada em develop remoto e, após aprovação, main.
 Nenhum merge em main foi feito. Os dois deploys externos estão registrados;
-a validação integral ainda depende das pendências indicadas.
+a consolidação final Git/CI e os limites operacionais seguem explicitados.
 
 ## 27. Como diagnosticar erros
 
@@ -700,7 +712,10 @@ Diagnóstico da interface só traz informações do contexto autorizado, não se
 
 SQL/RLS executados em PostgreSQL real e Supabase; CI e dois deploys aprovados.
 Auth/PostgREST reais usados nos seis cálculos, histórico e configuração.
-Pendente API negativa com JWTs e refresh real; leitura após reinício aprovada.
+API negativa com dois JWTs OPERADOR e refresh real aprovados pelo verificador;
+leitura após reinício aprovada. Não aguardada expiração natural do JWT, não
+testado acesso cruzado HTTP com JWT ADMIN/DEV ou PATCH direto de promoção.
+Consolidação/publicação final das branches e nova CI documental ainda pendentes.
 Formulário corrigido validado em produção; SQL com claims não é teste HTTP.
 Sessão não persistente entre novas conexões; logout segue validade natural do JWT.
 Sem recuperação de senha/cadastro público, compartilhamento, gestão global de usuários,

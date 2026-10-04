@@ -1,5 +1,10 @@
 # Publicação da correção administrativa — 03/10/2026
 
+Atualização posterior: usuário executou o verificador com duas contas reais;
+isolamento HTTP nas duas direções, RPC 403 e refresh real aprovados, logout local
+confirmado. Veja VALIDACAO_API_SESSAO.md. Pendências API/refresh abaixo são
+históricas; consolidação Git/CI do novo tip e limites operacionais permanecem.
+
 ## Suíte padrão e CI
 
 O usuário importou/publicou feature/config-form-state no clone original, em

@@ -57,10 +57,14 @@ seis referências independentes, cinco inválidos Breguet e NaN/inf/overflow.
 Auditorias históricas são opcionais. Não é necessário regenerar fixtures.
 
 Marco 663bd2c: usuário confirmou 640 passed ou 637 passed, 3 skipped portátil.
-Novo marco: runner diagnóstico observou **680 passed, 11 skipped, 0 failed**;
-há limitação de temporários do sandbox, por isso a execução padrão está pendente.
-Onze skips: três históricos e oito PostgreSQL. APIs controladas não provam
-Auth/RLS reais. Actions foi preparado com PostgreSQL 16 para executar SQL/RLS.
+Código 2486215: pytest padrão no terminal **691 passed, 8 skipped, 0 failed**;
+Actions 37165709281 **696 passed, 3 skipped, 0 failed**, incluindo PostgreSQL 16
+real e oito regressões do formulário. Três skips históricos na CI; oito SQL
+opcionais no terminal sem DSN. As 600 equivalências permanecem intactas.
+Auth/RLS reais também foram validados com duas contas: dados próprios acessíveis,
+dados alheios invisíveis nas duas direções, RPCs cruzadas negadas HTTP 403 e
+refresh HTTP real. Expiração natural do JWT não foi aguardada.
+Veja docs/VALIDACAO_API_SESSAO.md e demais registros de UI/SQL/deploy/restart.
 
 Para testes SQL locais, instale requirements-dev e aponte
 APOLO_TEST_POSTGRES_DSN somente para PostgreSQL descartável vazio com
@@ -76,6 +80,12 @@ Start: python -m tools.iniciar_online
 Health: /_stcore/health; endereço 0.0.0.0 e porta PORT.
 Não há banco/disco Render: persistência fica no Supabase.
 Health verde não confirma Auth/banco; siga a validação real do manual.
+Piloto publicado em https://apolo-web-z74k.onrender.com/, Source 2486215.
+Formulário corrigido e seis execuções preservados após redeploy/restart.
+Até integrar/publicar a branch configurada, use Deploy a specific commit:
+Deploy latest commit de feature/render-deploy ainda pode retornar f669ce2.
+Consolidação final Git/CI pendente; auto-deploy continua off. Sem prontidão
+operacional garantida: avalie backups, limites Free e riscos do manual.
 
 ## Importação local do legado
 

@@ -1,5 +1,26 @@
 # Changelog da implementação Apolo Web
 
+## API e renovação reais — encerramento funcional da etapa 10
+
+Feature/production-validation. Usuário executou verificador local: duas contas
+OPERADOR, refresh real, leitura própria positiva, cinco tabelas cruzadas
+invisíveis nas duas direções, diagnóstico próprio e RPC cruzada negados HTTP 403.
+Logout local das duas sessões confirmado; projeto A conserva seis execuções.
+Sem senhas/tokens enviados, sem SQL administrativo ou mudança persistente.
+Não aguardamos expiração natural JWT; não executamos PATCH/promocão via HTTP.
+Criado docs/VALIDACAO_API_SESSAO.md; alterados manual/changelog, README e
+docs/VALIDACAO_PRODUCAO_CORRECAO.md. Motivo: registrar evidência real e retirar
+pendências funcionais já resolvidas, mantendo limites metodológicos explícitos.
+Sem runtime novo; git diff --check. Código igual a 2486215: padrão 691/8/0,
+CI 37165709281 696/3/0. Commit “docs: confirmar isolamento HTTP e renovacao reais”;
+hash no relatório. Consolidação develop/render-deploy e CI do novo tip pendentes.
+
+Roteiro externo cria backups e exige árvore limpa/fast-forward, testa antes de
+integrar/publicar. Sem main/SQL/deploy/force. No sandbox, aprovação de escrita/rede
+não resolveu bloqueio de refs Git nem Schannel sem credenciais; usar terminal
+normal, sem mudar ACL/TLS ou extrair credenciais.
+As seções anteriores registram seus momentos históricos.
+
 ## CI e publicação da correção — continuação da etapa 10
 
 Feature/production-validation criada de develop isolado integrado até 2486215.
