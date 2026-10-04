@@ -4,9 +4,11 @@ Continuação autenticada: segunda conta conferida, isolamento real por SQL/RLS 
 telas ADMIN/DESENVOLVEDOR aprovados. A única conta promovida temporariamente
 voltou a OPERADOR, com remoção das páginas privilegiadas no rerun. Projeto A:
 status_projeto original restaurado e seis execuções preservadas.
-Veja docs/VALIDACAO_PAPEIS_ISOLAMENTO.md. Identificado defeito em dois salvamentos
-consecutivos de configuração, reproduzido por quatro regressões. Correção,
-publicação, API negativa, refresh e restart/redeploy pendentes.
+Veja docs/VALIDACAO_PAPEIS_ISOLAMENTO.md. O defeito de segundo envio de configuração
+foi reproduzido e corrigido na feature/config-form-state: oito novos testes e
+688 passed, 11 skipped na suíte portátil diagnóstica (18,93 s). Código corrigido
+ainda não publicado; sua CI e revalidação remota estão pendentes, assim como
+API negativa, refresh e restart/redeploy. Veja docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md.
 Os parágrafos seguintes registram a sequência histórica das validações.
 
 Validação real posterior: login OPERADOR, seis cálculos persistidos, 30 snapshots,
@@ -30,9 +32,10 @@ conferida em https://apolo-web-z74k.onrender.com/. Login/cálculos reais foram
 validados; isolamento entre usuários via API ainda exige segunda conta.
 
 Atualizado em 03/10/2026. Código preparado até PostgreSQL/Auth/RLS/UI/CI/Render.
-**A validação de produção ainda não está concluída:** CI e instalação SQL já
-passaram; fluxo OPERADOR aprovado, mas faltam segunda conta, papéis privilegiados,
-refresh real e validação de persistência após restart/redeploy.
+**A validação de produção ainda não está concluída:** CI anterior e instalação SQL
+passaram; OPERADOR, ADMIN, DESENVOLVEDOR e isolamento SQL entre contas aprovados.
+Faltam publicar/revalidar a correção de formulário, ataque negativo pela API,
+refresh real e persistência após restart/redeploy.
 
 Este manual explica o que mudou e por quê. Não confunde um teste com API simulada
 com um teste no serviço real. As fórmulas e o schema SQLite não foram alterados.
@@ -131,6 +134,10 @@ RLS responde “quais linhas desse banco pode acessar?”. São camadas compleme
       docs/VALIDACAO_ONLINE_MARCO_02.md
       docs/VALIDACAO_E2E_OPERADOR.md
       supabase/verificacoes/20261003_e2e.sql / 20261003_operador.sql
+      docs/VALIDACAO_PAPEIS_ISOLAMENTO.md
+      docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md
+      supabase/verificacoes/20261003_perfis_precheck.sql
+      supabase/verificacoes/20261003_papeis_isolamento.sql / 20261003_estado_ui.sql
       tools/
         importar_banco.py / gerar_fixtures_legado.py / iniciar_online.py
         __init__.py
@@ -305,6 +312,15 @@ identifica o banco local ou usuário/projeto online. Resultados de um contexto
 não são reapresentados como se fossem de outro. Diagnóstico passa pelo serviço,
 em vez de ler arquivo diretamente. Sem isso, a tela dependeria de um SQLite fictício.
 
+Uma descoberta da validação real: o default dos campos de Administração muda
+depois de salvar. Sem key explícita, isso alterava a identidade do campo e o
+segundo envio salvava o valor anterior. Agora texto/número usam
+config_valor:<contexto>:<id_variavel>, preservando a entrada entre reruns sem
+misturar projetos. O formulário continua chamando ServicoApolo.configurar;
+serviço, repository, grants e RLS continuam responsáveis pela autorização/gravação.
+Oito regressões conferem dados gravados, não só mensagens de sucesso.
+Referência: [identidade dos widgets](https://docs.streamlit.io/develop/concepts/architecture/widget-behavior).
+
 ## 12. Como services usam repositories
 
 database/contracts.py contém Protocol RepositorioCalculos: contexto, variaveis,
@@ -471,6 +487,11 @@ Referência: [PostgreSQL em Actions](https://docs.github.com/en/actions/tutorial
 | docs/VALIDACAO_E2E_OPERADOR.md | Fluxo real UI/Auth/banco e distinção entre SQL e acesso HTTP |
 | supabase/verificacoes/20261003_e2e.sql | Compara seis snapshots reais às referências e separação dos projetos |
 | supabase/verificacoes/20261003_operador.sql | Verifica autorização com claims SQL controlados e rollback; não promove perfil |
+| docs/VALIDACAO_PAPEIS_ISOLAMENTO.md | Papéis reais, segunda conta, rollback e retorno a operador |
+| supabase/verificacoes/20261003_perfis_precheck.sql | Confere perfis antes do teste; não lê credenciais |
+| supabase/verificacoes/20261003_papeis_isolamento.sql | Assertions reais de privilégios/isolamento com rollback |
+| supabase/verificacoes/20261003_estado_ui.sql | Consulta independente de papel, texto e execuções após UI |
+| docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md | Causa, correção mínima, prova de regressão e publicação pendente |
 
 O gerador e as fixtures haviam sido criados pelo usuário antes do commit 663bd2c;
 “criado” nesta tabela significa novo em Git em relação à baseline.
@@ -483,7 +504,7 @@ O gerador e as fixtures haviam sido criados pelo usuário antes do commit 663bd2
 | auth/provider.py | Local sem guarda de produção -> modo local explícito; evita identidade fictícia online |
 | database/repository.py | SQLite sem contrato explícito -> contexto/diagnóstico; mantém schema/transações intactos |
 | services/apolo.py | Dependência implícita -> Protocol e diagnóstico autorizado; evita acoplamento/acesso lateral |
-| interface/telas.py | repo.path -> contexto e diagnóstico pelo serviço; evita dependência de arquivo em produção |
+| interface/telas.py | repo.path -> contexto e diagnóstico pelo serviço; keys estáveis de configuração evitam perder o segundo envio |
 | iniciar.ps1 | Fallback de Python Codex -> venv própria/sistema e local/sqlite explícitos; portabilidade |
 | .gitignore | Ignorava bancos seletivos -> toda data e variantes .env; evita dados/secrets versionados |
 | .env.example | Só local -> opções online/porta/testes, sem valores reais; configuração reproduzível |
@@ -492,6 +513,7 @@ O gerador e as fixtures haviam sido criados pelo usuário antes do commit 663bd2
 | tests/test_equivalencia.py | Fonte obrigatória -> JSON + auditoria opcional; conserva cobertura e SHA/seeds |
 | tests/test_banco_e_papeis.py | Legado obrigatório -> schema JSON; mantém comparação exata de 11 objetos |
 | tests/test_bancos_reais.py | Bancos obrigatórios -> skip por ausência, auditoria preservada quando presentes |
+| tests/test_interface.py | Acrescenta quatro regressões de duas configurações consecutivas, com leitura real do SQLite |
 
 requirements.txt, core/calculos.py, core/catalogo.py, database/schema.sql,
 .streamlit/config.toml e fórmulas permaneceram inalterados.
@@ -509,6 +531,10 @@ completo, erros HTTP seguros, key administrativa rejeitada, refresh expirado,
 profile errado/ausente, rede diferente de credencial inválida, logout e UI online.
 AppTest atravessa formulários e serviços com API controlada, incluindo os seis
 cálculos, histórico e criação de projeto. Não representa login real.
+Foram acrescentadas oito regressões de configuração consecutiva: dois papéis x
+texto/número, tanto SQLite quanto API controlada. O mock online passa a atualizar
+valores pela RPC de configuração e permitir identidade parametrizada, sem ampliar
+permissões de produção. Cada teste confere o segundo valor persistido/enviado.
 
 Os oito testes PostgreSQL são pulados somente quando não há DSN. Se a CI fornecer
 DSN e o driver faltar, ou SQL/RLS falhar, devem falhar, não virar skip.
@@ -529,6 +555,7 @@ não apaga tabelas para se acomodar a um banco existente.
 | f669ce2, terminal usuário com ativos | 683 | 8 | 0 | pytest padrão, 16,70 s |
 | f669ce2, cópia portátil usuário | 680 | 11 | 0 | pytest padrão, 22,11 s |
 | f669ce2, GitHub Actions PostgreSQL 16 | 688 | 3 | 0 | CI real, 6,22 s |
+| Correção de configuração, clone isolado | 688 | 11 | 0 | Runner diagnóstico portátil, 18,93 s; não publicada |
 
 O sandbox não consegue usar certos temporários criados pelo pytest/Python:
 a tentativa padrão anterior produziu erros de setup. O runner auxiliar, fora
@@ -543,8 +570,11 @@ configuração de exemplo respondeu ok em 0.0.0.0:8518. Ambos foram encerrados.
 O navegador confirmou migrations/auditoria no Supabase e deploy/tela de login
 no Render. Depois foram aprovados login/logout, seis cálculos persistidos,
 histórico, separação A/B, recusa Breguet e login negativo numa conta real.
-CI, PostgreSQL real isolado e testes padrão foram confirmados; autenticação
-entre duas pessoas, papéis privilegiados e refresh real ainda precisam de validação.
+Depois, segunda conta e telas ADMIN/DESENVOLVEDOR foram conferidas; isolamento
+de duas pessoas foi aprovado com SQL controlado no Supabase. Perfil e texto
+temporários restaurados, sem alteração das seis execuções. Não é teste HTTP
+negativo com JWTs distintos. A correção do formulário ainda exige pytest padrão,
+CI própria e revalidação após publicação; refresh/restart/redeploy seguem pendentes.
 
 ## 23. Como rodar localmente
 

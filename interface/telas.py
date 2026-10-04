@@ -88,11 +88,14 @@ def administracao(servico):
     linhas=[r for r in servico.consultar() if not r["eh_saida"]]
     nome=st.selectbox("Variável",[r["nome"] for r in linhas])
     row=next(r for r in linhas if r["nome"]==nome)
+    # O default muda após salvar. Uma chave estável impede que o segundo envio
+    # seja reinicializado com o valor anterior; contexto separa bancos/projetos.
+    chave_valor=f"config_valor:{servico.repo.contexto}:{row['id_variavel']}"
     with st.form(f"config_{servico.repo.contexto}_{row['id_variavel']}"):
         if row["tipo"]=="REAL":
-            valor=st.number_input(f"Valor ({row['unidade_si']})",value=float(row["valor_real"] or 0),format="%.10g")
+            valor=st.number_input(f"Valor ({row['unidade_si']})",value=float(row["valor_real"] or 0),format="%.10g",key=chave_valor)
         else:
-            valor=st.text_input("Valor",value=row["valor_texto"] or "")
+            valor=st.text_input("Valor",value=row["valor_texto"] or "",key=chave_valor)
         enviar=st.form_submit_button("Salvar configuração")
     if enviar:
         try:

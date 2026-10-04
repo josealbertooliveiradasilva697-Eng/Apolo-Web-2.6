@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import pytest
 from streamlit.testing.v1 import AppTest
 from database.repository import RepositorioSQLite
@@ -62,6 +63,29 @@ def test_provedor_futuro_falha_fechado(app,monkeypatch):
     assert not app.exception
     assert len(app.error)==1
     assert len(app.number_input)==0
+
+
+@pytest.mark.parametrize("papel", ["admin", "desenvolvedor"])
+@pytest.mark.parametrize("nome,primeiro,segundo", [
+    ("status_projeto", "Primeira configuracao", "Conectado com sucesso"),
+    ("gravidade", 9.8, 9.7),
+])
+def test_configuracoes_consecutivas_persistem(app,monkeypatch,papel,nome,primeiro,segundo):
+    """Um segundo envio não pode salvar silenciosamente o valor anterior."""
+    monkeypatch.setenv("APOLO_LOCAL_ROLE", papel)
+    app.run()
+    app.sidebar.radio[0].set_value("Administração").run()
+    app.selectbox[0].select(nome).run()
+    repo=RepositorioSQLite(Path(os.environ["APOLO_DATA_DIR"]))
+    for valor in (primeiro,segundo):
+        widget=app.text_input[0] if isinstance(valor,str) else app.number_input[0]
+        widget.set_value(valor)
+        app.button[0].click().run()
+        assert not app.exception
+        assert len(app.success)==1
+        linha=next(r for r in repo.variaveis() if r["nome"]==nome)
+        campo="valor_texto" if isinstance(valor,str) else "valor_real"
+        assert linha[campo]==valor
 
 
 def test_sessoes_tem_formularios_independentes(app):

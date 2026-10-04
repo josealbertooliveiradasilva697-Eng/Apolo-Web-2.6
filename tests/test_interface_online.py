@@ -55,6 +55,9 @@ class API:
                 for n,v in data.items()
             ]
             return eid
+        if path == "/rest/v1/rpc/apolo_configure":
+            self.values[payload["p_nome"]] = payload["p_valor"]
+            return None
         if path == "/rest/v1/executions":
             rows = [e for e in self.executions if query["project_id"] == "eq." + e["project_id"]]
             if "id" in query:
@@ -71,13 +74,14 @@ def online_app(monkeypatch, tmp_path):
     uid = str(uuid4())
     user = Identidade(uid, Papel.OPERADOR, "Usuário")
     api = API(uid)
+    api.user = user
 
     class Provider:
         def entrar(self, email, senha):
             return Sessao("access", "refresh", time.time() + 3600)
 
         def restaurar(self, sessao):
-            return sessao, user
+            return sessao, api.user
 
         def cliente(self, sessao):
             return api
@@ -154,3 +158,27 @@ def test_criar_projeto_operador(online_app):
     assert not app.exception
     assert api.projects[-1]["nome"] == "Projeto B"
     assert app.sidebar.selectbox[0].value == api.projects[-1]["id"]
+
+
+@pytest.mark.parametrize("papel", [Papel.ADMIN, Papel.DESENVOLVEDOR])
+@pytest.mark.parametrize("nome,primeiro,segundo", [
+    ("status_projeto", "Primeira configuracao", "Conectado com sucesso"),
+    ("gravidade", 9.8, 9.7),
+])
+def test_configuracoes_online_consecutivas(online_app,papel,nome,primeiro,segundo):
+    """A API deve receber o segundo valor, não só uma mensagem de sucesso."""
+    app,api,_ = online_app
+    api.user = Identidade(api.uid, papel, "Usuário")
+    entrar(app)
+    app.sidebar.radio[0].set_value("Administração").run()
+    app.selectbox[0].select(nome).run()
+    for valor in (primeiro,segundo):
+        widget=app.text_input[0] if isinstance(valor,str) else app.number_input[0]
+        widget.set_value(valor)
+        next(b for b in app.button if b.label=="Salvar configuração").click().run()
+        assert not app.exception
+        assert len(app.success)==1
+        assert api.values[nome]==valor
+    chamadas=[c for c in api.calls if c[1]=="/rest/v1/rpc/apolo_configure"]
+    assert [c[2]["p_valor"] for c in chamadas]==[primeiro,segundo]
+    assert all(c[2]["p_project_id"]==api.projects[0]["id"] for c in chamadas)

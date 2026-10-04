@@ -1,5 +1,21 @@
 # Changelog da implementação Apolo Web
 
+## Correção descoberta na validação real — formulário administrativo
+
+Branch feature/config-form-state, criada de develop isolado após fast-forward
+da documentação d220aab. Sem alteração de main, clone OneDrive ou Render.
+Alterados: interface/telas.py, tests/test_interface.py, tests/test_interface_online.py,
+manual/changelog. Criado: docs/CORRECAO_CONFIGURACAO_CONSECUTIVA.md.
+Motivo: mudança do default reinicializava o campo sem key no segundo envio.
+Correção: key estável por contexto/id_variavel em texto/número; nenhuma mudança
+de equação, serviço, repository, RLS, migration ou dependência.
+Antes: quatro regressões falharam no segundo valor (4 failed, 691 deselected).
+Depois: oito regressões passaram, 691 deselected; suíte diagnóstica portátil
+688 passed, 11 skipped, 0 failed, 18,93 s. Limitação de cleanup do sandbox persiste.
+Pytest padrão, CI e deploy da correção ainda pendentes; CI f669ce2 não a valida.
+Commit: assunto “fix: preservar segundo envio de configuracao administrativa”;
+hash no relatório externo. Arquivos de dados e segredos preservados.
+
 ## Papéis reais e isolamento — continuação da etapa 10
 
 Branch feature/online-validation; runtime publicado permanece f669ce2.
